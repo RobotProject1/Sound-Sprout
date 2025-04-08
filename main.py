@@ -19,7 +19,7 @@ except (RuntimeError, ModuleNotFoundError):
     GPIO = MockGPIO()
 
 onoff_pin = 18
-GPIO.setmode(GPIO.BOARD)  # BOARD pin-numbering scheme
+GPIO.setmode(GPIO.BCM)  # BOARD BCM scheme
 GPIO.setup(onoff_pin, GPIO.IN)  # button pin set as input
 
 def kill_python_scripts_by_name(target_names): # ex ['lighting_rainy.py', 'lighting_summer.py']
@@ -54,10 +54,10 @@ target_scripts = ['lighting_rainy.py', 'lighting_summer.py','lighting_winter.py'
 
 if __name__ == '__main__':
     while True:
-        GPIO.wait_for_edge(onoff_pin, "GPIO.FALLING")
+        GPIO.wait_for_edge(onoff_pin, GPIO.RISING)
         run_script('choose_season.py')
         run_script('playsound.py')
-        GPIO.wait_for_edge(onoff_pin, 'GPIO.FALLING')
+        GPIO.wait_for_edge(onoff_pin, GPIO.RISING)
         kill_python_scripts_by_name(target_scripts)
 
 # run_script('choose_season.py')

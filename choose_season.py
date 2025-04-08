@@ -1,14 +1,18 @@
+from main import run_script
+import jetson.GPIO as GPIO
 import time
 import os
-# This code writes to a file every second and reads from it in another script.
-# The file is named 'path_list.txt' and is located in the same directory as this script.
-# The script will write the current value of 'i' to the file every second.  
-# i = 0
-# while True:
-#     f = open('path_list.txt', 'w')
-#     f.write(str(i))
-#     i+=1
-#     f.close()
-#     time.sleep(1)
+
+GPIO.setmode(GPIO.BCM)
+rainy_pin = 18
+summer_pin = 23
+winter_pin = 24
+
+GPIO.setup(rainy_pin, GPIO.IN)  # button pin set as input
+GPIO.setup(summer_pin, GPIO.IN)  # button pin set as input  
+GPIO.setup(winter_pin, GPIO.IN)  # button pin set as input
+
+while True:
+
 
 print("Choose a season:")
