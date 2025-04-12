@@ -1,1 +1,1 @@
-sound\summer\RADISH.wav
+sound\summer\RADISH.wav,sound\summer\CARROT.wav

@@ -40,7 +40,6 @@ while True:
             ss_new = 'winter'
             print("Winter season selected.")
             break
-        break
     
     if ss_new == ss_old:
         pass
@@ -54,5 +53,3 @@ while True:
         elif ss_new == 'winter':
             run_script('winter_sound.py')
         ss_new = ''
-
-    print("Waiting for season selection...")

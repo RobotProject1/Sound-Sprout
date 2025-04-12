@@ -56,37 +56,36 @@ def callback(outdata, frames, time, status):
     outdata[:] = chunk
     index = (index + frames) % total_frames  # wrap the index to loop
 
- 
-mtime = os.path.getmtime('path_list.txt')
-last_mtime = 0
-stream = None
-just_looped = False
-with open('path_list.txt', 'r') as file:
-    path_list = file.read()
-    path_list = path_list.split(',')
-print(path_list)
-audio_clip_paths = [i for i in path_list if i != '']
-mixed_audio, sample_rate, num_channels = mix(audio_clip_paths)
-index = 0
-stream = sd.OutputStream(samplerate=sample_rate, channels=num_channels, callback=callback )
-stream.start()
+if __name__ == "__main__": 
+    mtime = os.path.getmtime('path_list.txt')
+    last_mtime = 0
+    stream = None
+    just_looped = False
+    with open('path_list.txt', 'r') as file:
+        path_list = file.read()
+        path_list = path_list.split(',')
+    print(path_list)
+    audio_clip_paths = [i for i in path_list if i != '']
+    mixed_audio, sample_rate, num_channels = mix(audio_clip_paths)
+    index = 0
+    stream = sd.OutputStream(samplerate=sample_rate, channels=num_channels, callback=callback )
+    stream.start()
 
-while True:
-    try:
-        mtime = os.path.getmtime('path_list.txt')
-        if mtime == last_mtime:
-            pass
-        else:
-            with open('path_list.txt', 'r') as file:
-                path_list = file.read()
-                path_list = path_list.split(',')
-            print(path_list)
-            audio_clip_paths = [i for i in path_list if i != '']
-            mixed_audio, sample_rate, num_channels = mix(audio_clip_paths)
-            last_mtime = mtime
+    while True:
+        try:
+            mtime = os.path.getmtime('path_list.txt')
+            if mtime == last_mtime:
+                pass
+            else:
+                with open('path_list.txt', 'r') as file:
+                    path_list = file.read()
+                    path_list = path_list.split(',')
+                print(path_list)
+                audio_clip_paths = [i for i in path_list if i != '']
+                mixed_audio, sample_rate, num_channels = mix(audio_clip_paths)
+                last_mtime = mtime
 
-    except Exception as e:
-        print(f"An error occurred: {e}")
-        time.sleep(1)  # Retry after a small delay
-    # time.sleep(2)
-              
+        except Exception as e:
+            print(f"An error occurred: {e}")
+            time.sleep(1) 
+                

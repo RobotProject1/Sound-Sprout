@@ -18,10 +18,6 @@ except (RuntimeError, ModuleNotFoundError):
             return True
     GPIO = MockGPIO()
 
-onoff_pin = 18
-GPIO.setmode(GPIO.BCM)  # BOARD BCM scheme
-GPIO.setup(onoff_pin, GPIO.IN)  # button pin set as input
-
 def kill_python_scripts_by_name(target_names): # ex ['lighting_rainy.py', 'lighting_summer.py']
     """
     Kill all running Python scripts whose command lines include one of the target names.
@@ -50,9 +46,11 @@ def run_script(script_name): # ex 'lighting_rainy.py'
     script_path = os.path.join(os.path.dirname(__file__), script_name)
     subprocess.Popen([sys.executable, script_path], shell=False)
 
-target_scripts = ['lighting_rainy.py', 'lighting_summer.py','lighting_winter.py','choose_season.py','main.py','playsound.py','summer_sound.py','rain_sound.py','winter_sound.py']
-
 if __name__ == '__main__':
+    onoff_pin = 18
+    GPIO.setmode(GPIO.BCM)  # BOARD BCM scheme
+    GPIO.setup(onoff_pin, GPIO.IN)  # button pin set as input
+    target_scripts = ['lighting_rainy.py', 'lighting_summer.py','lighting_winter.py','choose_season.py','main.py','playsound.py','summer_sound.py','rain_sound.py','winter_sound.py']
     while True:
         GPIO.wait_for_edge(onoff_pin, GPIO.RISING)
         run_script('choose_season.py')
