@@ -1,6 +1,8 @@
 import wave
 import numpy as np
 import sounddevice as sd
+import os
+import time
 
 def mix(audio_clip_paths):
     audio_arrays = []
@@ -35,47 +37,68 @@ def mix(audio_clip_paths):
     # Mix by summing and clipping to int16 range
     mixed_audio = np.sum(audio_arrays, axis=0)
     mixed_audio = np.clip(mixed_audio, -32768, 32767).astype(np.int16)
+    mixed_audio = mixed_audio.astype(np.float32)
+    max_val = np.max(np.abs(mixed_audio))
+    mixed_audio /= max_val  # normalize to [-1.0, 1.0]
+    return mixed_audio, sample_rate, num_channels
 
-    return mixed_audio, sample_rate
 
-# Example usage
-audio_clip_paths = ['sound/summer/CARROT.wav', 'sound/summer/RADISH.wav']
-mixed_audio,sample_rate = mix(audio_clip_paths)
+# path_list = open('path_list.txt', 'r')
+# path_list = path_list.read()
+# path_list = path_list.split(',')
+# print(path_list)
+# audio_clip_paths = [i for i in path_list if i != '']
+# # Example usage
+# audio_clip_paths = ['sound/summer/CARROT.wav', 'sound/summer/RADISH.wav']
+#mixed_audio, sample_rate, num_channels = mix(audio_clip_paths)
 
-print("Mixed audio shape:", mixed_audio.shape)
-print(wave.open(audio_clip_paths[0], 'rb').getparams())
+def callback(outdata, frames, time, status):
+    global index,just_looped
+    total_frames = mixed_audio.shape[0]
+    # Calculate the end index for this chunk
+    end_index = index + frames
+    if end_index <= total_frames:
+        chunk = mixed_audio[index:end_index]
+    else:
+        # Wrap around to the beginning
+        first_part = mixed_audio[index:]
+        second_part = mixed_audio[:end_index - total_frames]
+        chunk = np.vstack((first_part, second_part))
+        just_looped = True
+    outdata[:] = chunk
+    index = (index + frames) % total_frames  # wrap the index to loop
+ 
 
-# while True:
-#     sd.play(mixed_audio, samplerate=sample_rate)
-#     print("Playing mixed audio...")
-#     sd.wait() 
-
-if len(mixed_audio.shape) == 1:
-    mixed_audio = mixed_audio[:, np.newaxis]  # For mono audio
-num_channels = mixed_audio.shape[1]
-
-# Define a class to handle looping
-class Looper:
-    def __init__(self, audio):
-        self.audio = audio
-        self.index = 0
-
-    def callback(self, outdata, frames, time, status):
-        if status:
-            print(status)
-        if self.index + frames <= len(self.audio):
-            outdata[:] = self.audio[self.index:self.index + frames]
-            self.index += frames
+mtime = os.path.getmtime('path_list.txt')
+last_mtime = 0
+stream = None
+just_looped = False
+while True:
+    try:
+        mtime = os.path.getmtime('path_list.txt')
+        if mtime == last_mtime:
+            pass
         else:
-            remaining = len(self.audio) - self.index
-            outdata[:remaining] = self.audio[self.index:]
-            outdata[remaining:] = self.audio[:frames - remaining]
-            self.index = frames - remaining
+            with open('path_list.txt', 'r') as file:
+                path_list = file.read()
+                path_list = path_list.split(',')
+            print(path_list)
+            audio_clip_paths = [i for i in path_list if i != '']
+            mixed_audio, sample_rate, num_channels = mix(audio_clip_paths)
+            last_mtime = mtime
+            index = 0
+            just_looped = False
+            if stream is not None:
+                while True:
+                    if just_looped:
+                        break
+                stream.stop()
+                stream.close()
+            stream = sd.OutputStream(samplerate=sample_rate, channels=num_channels, callback=callback )
+            stream.start()
 
-# Create an instance of Looper
-looper = Looper(mixed_audio)
-
-# Start the output stream
-with sd.OutputStream(samplerate=sample_rate, channels=num_channels, callback=looper.callback):
-    input("Press Enter to stop...")
-    
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        time.sleep(1)  # Retry after a small delay
+    time.sleep(2)
+              
