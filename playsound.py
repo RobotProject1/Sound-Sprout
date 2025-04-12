@@ -42,16 +42,6 @@ def mix(audio_clip_paths):
     mixed_audio /= max_val  # normalize to [-1.0, 1.0]
     return mixed_audio, sample_rate, num_channels
 
-
-# path_list = open('path_list.txt', 'r')
-# path_list = path_list.read()
-# path_list = path_list.split(',')
-# print(path_list)
-# audio_clip_paths = [i for i in path_list if i != '']
-# # Example usage
-# audio_clip_paths = ['sound/summer/CARROT.wav', 'sound/summer/RADISH.wav']
-#mixed_audio, sample_rate, num_channels = mix(audio_clip_paths)
-
 def callback(outdata, frames, time, status):
     global index,just_looped
     total_frames = mixed_audio.shape[0]
@@ -68,7 +58,6 @@ def callback(outdata, frames, time, status):
     outdata[:] = chunk
     index = (index + frames) % total_frames  # wrap the index to loop
  
-
 mtime = os.path.getmtime('path_list.txt')
 last_mtime = 0
 stream = None
@@ -100,5 +89,5 @@ while True:
     except Exception as e:
         print(f"An error occurred: {e}")
         time.sleep(1)  # Retry after a small delay
-    time.sleep(2)
+    # time.sleep(2)
               
