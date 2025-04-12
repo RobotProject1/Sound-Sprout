@@ -45,18 +45,17 @@ def mix(audio_clip_paths):
 def callback(outdata, frames, time, status):
     global index,just_looped
     total_frames = mixed_audio.shape[0]
-    # Calculate the end index for this chunk
     end_index = index + frames
     if end_index <= total_frames:
         chunk = mixed_audio[index:end_index]
     else:
-        # Wrap around to the beginning
         first_part = mixed_audio[index:]
         second_part = mixed_audio[:end_index - total_frames]
         chunk = np.vstack((first_part, second_part))
-        just_looped = True
+        just_looped = True  # set the flag to indicate that we looped
     outdata[:] = chunk
     index = (index + frames) % total_frames  # wrap the index to loop
+
  
 mtime = os.path.getmtime('path_list.txt')
 last_mtime = 0
@@ -79,7 +78,7 @@ while True:
             just_looped = False
             if stream is not None:
                 while True:
-                    if just_looped:
+                    if just_looped== True:
                         break
                 stream.stop()
                 stream.close()
