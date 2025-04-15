@@ -1,10 +1,49 @@
-# This code writes to a file every second and reads from it in another script.
-# The file is named 'path_list.txt' and is located in the same directory as this script.
-# The script will write the current value of 'i' to the file every second.  
-# i = 0
-# while True:
-#     f = open('path_list.txt', 'w')
-#     f.write(str(i))
-#     i+=1
-#     f.close()
-#     time.sleep(1)
+from plant_classification import read_id,read_v
+from threading import Thread
+
+#1=daisy 2=sunflower 3=clover 4=potato 5=radish 6=carrot 7=garlic 8=pumpkin 9=tomato 10=corn 11=cauliflower 12=mushroom
+track = {1:'sound\summer\CARROT.wav',
+         2:'sound\summer\SUNFLOWER.wav',
+         3:'sound\summer\CLOVER.wav', 
+         4:'sound\summer\POTATO.wav',
+         5:'sound\summer\RADISH.wav', 
+         6:'sound\summer\CARROT.wav',
+         7:'sound\summer\GARLIC.wav', 
+         8:'sound\summer\PUMPKIN.wav',
+         9:'sound\summer\TOMATO.wav', 
+         10:'sound\summer\CORN.wav',
+         11:'sound\summer\CAULIFLOWER.wav',
+         12:'sound\summer\MUSHROOM.wav'}
+
+class readnwrite(Thread):
+    def __init__(self, end):
+        Thread.__init__(self)
+        #self.end = end
+    def run(self):
+        plant_id_old = []
+        plant_id_new = []
+        while True:
+            plant_id_new = read_id(read_v())
+            if plant_id_new == plant_id_old:
+                pass
+            else:
+                with open('path_list.txt', 'w') as file:
+                    path_list = 'sound\summer\AMBIENT.wav'
+                    for i in plant_id_new:
+                        path_list += ','+track[i]
+                    file.write(path_list)
+            plant_id_old = plant_id_new.copy()
+
+class lighting(Thread):
+    def __init__(self, end):
+        Thread.__init__(self)
+        #self.end = end
+    def run(self):
+        while True:
+            pass
+        #lighting code here
+
+thr1 = readnwrite()
+thr2 = lighting()
+thr1.start()
+thr2.start()

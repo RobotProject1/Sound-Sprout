@@ -1,17 +1,19 @@
 from main import run_script, kill_python_scripts_by_name
 # import Jetson.GPIO as GPIO
-
-class MockGPIO:
-    BCM = BOARD = IN = OUT = HIGH = LOW = None
-    def setmode(self, mode): pass
-    def setup(self, pin, mode): pass
-    def output(self, pin, state): pass
-    def input(self, pin): return False
-    def cleanup(self): pass
-    def wait_for_edge(self, pin, edge_type):
-        print(f"Simulating waiting for {edge_type} edge on pin {pin}")
-        return True
-GPIO = MockGPIO()
+try: 
+    import Jetson.GPIO as GPIO
+except (RuntimeError, ModuleNotFoundError):
+    class MockGPIO:
+        BCM = BOARD = IN = OUT = HIGH = LOW = None
+        def setmode(self, mode): pass
+        def setup(self, pin, mode): pass
+        def output(self, pin, state): pass
+        def input(self, pin): return False
+        def cleanup(self): pass
+        def wait_for_edge(self, pin, edge_type):
+            print(f"Simulating waiting for {edge_type} edge on pin {pin}")
+            return True
+    GPIO = MockGPIO()
 
 
 GPIO.setmode(GPIO.BCM)
@@ -24,7 +26,7 @@ GPIO.setup(summer_pin, GPIO.IN)  # button pin set as input
 GPIO.setup(winter_pin, GPIO.IN)  # button pin set as input
 
 ss_old = ''
-ss_new = ''
+ss_new = 'summer'
 
 while True:
     while len(ss_new) == 0:
