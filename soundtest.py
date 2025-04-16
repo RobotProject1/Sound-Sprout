@@ -1,6 +1,6 @@
 import sounddevice as sd
 from playsound_v1 import mix
-sound = mix(['sound\summer\RADISH.wav'])
+sound = mix(['sound\spring\RADISH.wav'])
 print('ctrl+c to stop')
 try:
     while True:
