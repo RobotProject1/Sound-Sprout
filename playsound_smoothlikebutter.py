@@ -36,10 +36,11 @@ def mix(audio_clip_paths):
 
     # Mix by summing and clipping to int16 range
     mixed_audio = np.sum(audio_arrays, axis=0)
-    mixed_audio = np.clip(mixed_audio, -32768, 32767).astype(np.int16)
     mixed_audio = mixed_audio.astype(np.float32)
     max_val = np.max(np.abs(mixed_audio))
-    mixed_audio /= max_val  # normalize to [-1.0, 1.0]
+    mixed_audio /= (max_val)  # normalize to [-1.0, 1.0]
+    # mixed_audio += 1.0  # shift to [0.0, 2.0]
+    # mixed_audio /= 2.0  # scale to [0.0, 1.0]
     return mixed_audio, sample_rate, num_channels
 
 def callback(outdata, frames, time, status):
