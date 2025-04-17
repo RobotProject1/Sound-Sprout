@@ -18,15 +18,15 @@ except (RuntimeError, ModuleNotFoundError):
 
 GPIO.setmode(GPIO.BCM)
 rainy_pin = 18
-summer_pin = 23
+spring_pin = 23
 winter_pin = 24
 
 GPIO.setup(rainy_pin, GPIO.IN)  # button pin set as input
-GPIO.setup(summer_pin, GPIO.IN)  # button pin set as input  
+GPIO.setup(spring_pin, GPIO.IN)  # button pin set as input  
 GPIO.setup(winter_pin, GPIO.IN)  # button pin set as input
 
 ss_old = ''
-ss_new = 'summer'
+ss_new = 'spring'
 
 while True:
     while len(ss_new) == 0:
@@ -34,9 +34,9 @@ while True:
             ss_new = 'rainy'
             print("Rainy season selected.")
             break
-        elif GPIO.input(summer_pin) == GPIO.HIGH:
-            ss_new = 'summer'
-            print("Summer season selected.")
+        elif GPIO.input(spring_pin) == GPIO.HIGH:
+            ss_new = 'spring'
+            print("spring season selected.")
             break
         elif GPIO.input(winter_pin) == GPIO.HIGH:
             ss_new = 'winter'
@@ -47,11 +47,11 @@ while True:
         pass
     else:
         ss_old = ss_new
-        kill_python_scripts_by_name(['summer_sound.py', 'rainy_sound.py','winter_sound.py'])
+        kill_python_scripts_by_name(['spring_sound.py', 'rainy_sound.py','winter_sound.py'])
         if ss_new == 'rainy':
             run_script('rainy_sound.py')
-        elif ss_new == 'summer':
-            run_script('summer_sound.py')
+        elif ss_new == 'spring':
+            run_script('spring_sound.py')
         elif ss_new == 'winter':
             run_script('winter_sound.py')
         ss_new = ''
