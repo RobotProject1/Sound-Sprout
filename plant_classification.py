@@ -17,7 +17,7 @@ def read_id(v_list):
     for v in v_list:
         matched_id = 0
         for volt, id in id2v_dict:
-            if abs(v - volt) < 0.2: 
+            if abs(v - volt) < 0.1: 
                 matched_id = id
                 break
         id_list.append(matched_id)
