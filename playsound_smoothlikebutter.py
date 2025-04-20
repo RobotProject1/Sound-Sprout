@@ -34,13 +34,10 @@ def mix(audio_clip_paths):
         else:
             audio_arrays[i] = np.pad(audio_arrays[i], ((0, pad_width), (0, 0)), 'constant')
 
-    # Mix by summing and clipping to int16 range
     mixed_audio = np.sum(audio_arrays, axis=0)
     mixed_audio = mixed_audio.astype(np.float32)
     max_val = np.max(np.abs(mixed_audio))
-    mixed_audio /= (max_val)  # normalize to [-1.0, 1.0]
-    # mixed_audio += 1.0  # shift to [0.0, 2.0]
-    # mixed_audio /= 2.0  # scale to [0.0, 1.0]
+    mixed_audio /= (max_val) # normalize to [-1.0, 1.0]
     return mixed_audio, sample_rate, num_channels
 
 def callback(outdata, frames, time, status):
@@ -53,7 +50,6 @@ def callback(outdata, frames, time, status):
         first_part = mixed_audio[index:]
         second_part = mixed_audio[:end_index - total_frames]
         chunk = np.vstack((first_part, second_part))
-        just_looped = True  # set the flag to indicate that we looped
     outdata[:] = chunk
     index = (index + frames) % total_frames  # wrap the index to loop
 
@@ -61,7 +57,6 @@ if __name__ == "__main__":
     mtime = os.path.getmtime('path_list.txt')
     last_mtime = 0
     stream = None
-    just_looped = False
     with open('path_list.txt', 'r') as file:
         path_list = file.read()
         path_list = path_list.split(',')
