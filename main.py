@@ -2,6 +2,8 @@ import os
 import psutil
 import subprocess
 import sys
+from threading import Thread
+import time
 
 try:
     import Jetson.GPIO as GPIO
@@ -46,18 +48,69 @@ def run_script(script_name): # ex 'lighting_rainy.py'
     script_path = os.path.join(os.path.dirname(__file__), script_name)
     subprocess.Popen([sys.executable, script_path], shell=False)
 
+GPIO.setmode(GPIO.BCM)
+rainy_pin = 18
+spring_pin = 23
+winter_pin = 24
+
+GPIO.setup(rainy_pin, GPIO.IN)  # button pin set as input
+GPIO.setup(spring_pin, GPIO.IN)  # button pin set as input  
+GPIO.setup(winter_pin, GPIO.IN)  # button pin set as input
+
+ss_old = ''
+ss_new = 'spring'
+
+class choose_season(Thread):
+    def __init__(self):
+        Thread.__init__(self)
+        self.running = True
+    def stop(self):
+        self.running = False
+    def run(self):
+        global ss_old, ss_new
+        while self.running:
+            while len(ss_new) == 0:
+                if GPIO.input(rainy_pin) == GPIO.HIGH:
+                    ss_new = 'rainy'
+                    print("Rainy season selected.")
+                    break
+                elif GPIO.input(spring_pin) == GPIO.HIGH:
+                    ss_new = 'spring'
+                    print("spring season selected.")
+                    break
+                elif GPIO.input(winter_pin) == GPIO.HIGH:
+                    ss_new = 'winter'
+                    print("Winter season selected.")
+                    break
+            
+            if ss_new == ss_old:
+                pass
+            else:
+                ss_old = ss_new
+                kill_python_scripts_by_name(['spring_sound.py', 'rainy_sound.py','winter_sound.py'])
+                if ss_new == 'rainy':
+                    run_script('rainy_sound.py')
+                elif ss_new == 'spring':
+                    run_script('spring_sound.py')
+                elif ss_new == 'winter':
+                    run_script('winter_sound.py')
+                ss_new = ''
+
+
 if __name__ == '__main__':
     onoff_pin = 18
     GPIO.setmode(GPIO.BCM)  
     GPIO.setup(onoff_pin, GPIO.IN)
-    target_scripts = ['lighting_rainy.py', 'lighting_summer.py','lighting_winter.py','choose_season.py','main.py','playsound_smoothlikebutter.py','summer_sound.py','rain_sound.py','winter_sound.py']
+    target_scripts = ['playsound_smoothlikebutter.py','summer_sound.py','rain_sound.py','winter_sound.py']
     while True:
         GPIO.wait_for_edge(onoff_pin, GPIO.RISING)
-        run_script('choose_season.py')
+        time.sleep(0.3)
+        choose_season_thread = choose_season()
+        choose_season_thread.start()
         run_script('playsound_smoothlikebutter.py')
         GPIO.wait_for_edge(onoff_pin, GPIO.RISING)
+        time.sleep(0.3)
+        choose_season_thread.stop()
+        ss_old = ''
+        ss_new = 'spring'
         kill_python_scripts_by_name(target_scripts)
-
-# run_script('choose_season.py')
-# run_script('playsound.py')
-# kill_python_scripts_by_name(target_scripts)

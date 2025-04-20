@@ -16,9 +16,8 @@ track = {1:'sound\Rainy\Daisy.wav',
          12:'sound\Rainy\Mushroom.wav'}
 
 class readnwrite(Thread):
-    def __init__(self, end):
+    def __init__(self):
         Thread.__init__(self)
-        #self.end = end
     def run(self):
         plant_id_old = []
         plant_id_new = []
@@ -38,15 +37,14 @@ class readnwrite(Thread):
             plant_id_old = plant_id_new.copy()
 
 class lighting(Thread):
-    def __init__(self, end):
+    def __init__(self):
         Thread.__init__(self)
-        #self.end = end
     def run(self):
         while True:
             pass
-        #lighting code here
 
-thr1 = readnwrite()
-thr2 = lighting()
-thr1.start()
-thr2.start()
+if __name__ == "__main__": 
+    thr1 = readnwrite()
+    thr2 = lighting()
+    thr1.start()
+    thr2.start()
