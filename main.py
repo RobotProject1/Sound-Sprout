@@ -101,13 +101,13 @@ if __name__ == '__main__':
     onoff_pin = 18
     GPIO.setmode(GPIO.BCM)  
     GPIO.setup(onoff_pin, GPIO.IN)
-    target_scripts = ['playsound_smoothlikebutter.py','summer_sound.py','rain_sound.py','winter_sound.py']
+    target_scripts = ['playsound.py','summer_sound.py','rain_sound.py','winter_sound.py']
     while True:
         GPIO.wait_for_edge(onoff_pin, GPIO.RISING)
         time.sleep(0.3)
         choose_season_thread = choose_season()
         choose_season_thread.start()
-        run_script('playsound_smoothlikebutter.py')
+        run_script('playsound.py')
         GPIO.wait_for_edge(onoff_pin, GPIO.RISING)
         time.sleep(0.3)
         choose_season_thread.stop()

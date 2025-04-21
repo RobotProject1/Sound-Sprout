@@ -1,6 +1,6 @@
 import sounddevice as sd
-from playsound_v1 import mix
-sound = mix(['sound\winter\Cauliflower.wav', 'sound\winter\Daisy.wav', 'sound\winter\Radish.wav', 'sound\winter\Potato.wav', 'sound\winter\Corn.wav'])
+from playsound import mix
+sound = mix(['sound\spring\Mushroom.wav', 'sound\spring\Pumpkin.wav', 'sound\spring\Garlic.wav', 'sound\spring\Potato.wav', 'sound\spring\Corn.wav'])
 print('ctrl+c to stop')
 try:
     while True:
