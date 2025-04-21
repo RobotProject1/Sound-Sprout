@@ -46,7 +46,7 @@ def run_script(script_name): # ex 'lighting_rainy.py'
     Run a Python script using subprocess, cross-platform.
     """
     script_path = os.path.join(os.path.dirname(__file__), script_name)
-    subprocess.Popen([sys.executable, script_path], shell=False)
+    subprocess.Popen([sys.executable, script_path], shell=True)
 
 GPIO.setmode(GPIO.BCM)
 rainy_pin = 18
