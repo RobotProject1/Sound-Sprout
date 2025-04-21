@@ -34,7 +34,7 @@ def mix(audio_clip_paths):
     max_val = np.max(np.abs(mixed_audio))
     mixed_audio /= (max_val) # normalize to [-1.0, 1.0]
     return mixed_audio, sample_rate, num_channels
-sound = mix(['sound\spring\Mushroom.wav', 'sound\spring\Pumpkin.wav', 'sound\spring\Garlic.wav', 'sound\spring\Potato.wav', 'sound\spring\Corn.wav'])
+sound = mix(['sound/spring/Mushroom.wav', 'sound/spring/Pumpkin.wav', 'sound/spring/Garlic.wav', 'sound/spring/Potato.wav', 'sound/spring/Corn.wav'])
 print('ctrl+c to stop')
 try:
     while True:
