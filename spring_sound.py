@@ -49,3 +49,4 @@ if __name__ == "__main__":
     thr2 = lighting()
     thr1.start()
     thr2.start()
+
