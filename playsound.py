@@ -9,6 +9,10 @@ import ADS1x15
 ADS1 = ADS1x15.ADS1115(1, 0x48)
 f = ADS1.toVoltage()
 
+with f.open('sound_sprout/path_list.txt', 'w') as file:
+    pass
+
+
 def mix(audio_clip_paths):
     audio_arrays = []
     sample_rate = None
@@ -65,11 +69,11 @@ class checkfile(Thread):
         global mixed_audio, sample_rate, num_channels
         while True:
             try:
-                mtime = os.path.getmtime('path_list.txt')
+                mtime = os.path.getmtime('sound_sprout/path_list.txt')
                 if mtime == self.last_mtime:
                     pass
                 else:
-                    with open('path_list.txt', 'r') as file:
+                    with open('sound_sprout/path_list.txt', 'r') as file:
                         path_list = file.read()
                         path_list = path_list.split(',')
                     print(path_list)
@@ -96,10 +100,10 @@ class volume(Thread):
 
 
 if __name__ == "__main__": 
-    mtime = os.path.getmtime('path_list.txt')
+    mtime = os.path.getmtime('sound_sprout/path_list.txt')
     last_mtime = 0
     stream = None
-    with open('path_list.txt', 'r') as file:
+    with open('sound_sprout/path_list.txt', 'r') as file:
         path_list = file.read()
         path_list = path_list.split(',')
     print(path_list)
