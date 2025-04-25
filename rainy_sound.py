@@ -1,6 +1,5 @@
 from plant_classification import read_id,read_v
 from threading import Thread
-import os
 
 #1=daisy 2=sunflower 3=clover 4=potato 5=radish 6=carrot 7=garlic 8=pumpkin 9=tomato 10=corn 11=cauliflower 12=mushroom
 track = {1:'sound_sprout/sound/Rainy/Daisy.wav',
@@ -28,12 +27,12 @@ class readnwrite(Thread):
                 pass
             else:
                 with open('sound_sprout/path_list.txt', 'w') as file:
-                    path_list = os.path.join(os.path.dirname(__file__),'sound_sprout/sound/Rainy/AMBIENT.wav')
+                    path_list = 'sound_sprout/sound/Rainy/AMBIENT.wav'
                     for i in plant_id_new:
                         if i == 0:
                             pass
                         else:
-                            path_list += ','+os.path.join(os.path.dirname(__file__),track[i])
+                            path_list += ','+track[i]
                     file.write(path_list)
             plant_id_old = plant_id_new.copy()
 
