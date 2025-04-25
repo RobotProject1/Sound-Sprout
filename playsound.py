@@ -9,7 +9,7 @@ import ADS1x15
 ADS1 = ADS1x15.ADS1115(1, 0x48)
 f = ADS1.toVoltage()
 
-with f.open('sound_sprout/path_list.txt', 'w') as file:
+with open('sound_sprout/path_list.txt', 'w') as file:
     pass
 
 
