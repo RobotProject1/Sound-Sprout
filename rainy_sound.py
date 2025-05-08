@@ -2,23 +2,22 @@ from plant_classification import read_id,read_v
 from threading import Thread
 
 #1=daisy 2=sunflower 3=clover 4=potato 5=radish 6=carrot 7=garlic 8=pumpkin 9=tomato 10=corn 11=cauliflower 12=mushroom
-track = {1:'sound\Rainy\Daisy.wav',
-         2:'sound\Rainy\Sunflower.wav',
-         3:'sound\Rainy\Clover.wav', 
-         4:'sound\Rainy\Potato.wav',
-         5:'sound\Rainy\Radish.wav', 
-         6:'sound\Rainy\Carrot.wav',
-         7:'sound\Rainy\Garlic.wav', 
-         8:'sound\Rainy\Pumpkin.wav',
-         9:'sound\Rainy\Tomato.wav', 
-         10:'sound\Rainy\Corn.wav',
-         11:'sound\Rainy\Cauliflower.wav',
-         12:'sound\Rainy\Mushroom.wav'}
+track = {1:'sound_sprout/sound/Rainy/Daisy.wav',
+         2:'sound_sprout/sound/Rainy/Sunflower.wav',
+         3:'sound_sprout/sound/Rainy/Clover.wav', 
+         4:'sound_sprout/sound/Rainy/Potato.wav',
+         5:'sound_sprout/sound/Rainy/Radish.wav', 
+         6:'sound_sprout/sound/Rainy/Carrot.wav',
+         7:'sound_sprout/sound/Rainy/Shallot.wav', 
+         8:'sound_sprout/sound/Rainy/Pumpkin.wav',
+         9:'sound_sprout/sound/Rainy/Tomato.wav', 
+         10:'sound_sprout/sound/Rainy/Corn.wav',
+         11:'sound_sprout/sound/Rainy/Cauliflower.wav',
+         12:'sound_sprout/sound/Rainy/Mushroom.wav'}
 
 class readnwrite(Thread):
-    def __init__(self, end):
+    def __init__(self):
         Thread.__init__(self)
-        #self.end = end
     def run(self):
         plant_id_old = []
         plant_id_new = []
@@ -27,8 +26,8 @@ class readnwrite(Thread):
             if plant_id_new == plant_id_old:
                 pass
             else:
-                with open('path_list.txt', 'w') as file:
-                    path_list = 'sound\Rainy\AMBIENT.wav'
+                with open('sound_sprout/path_list.txt', 'w') as file:
+                    path_list = 'sound_sprout/sound/Rainy/AMBIENT.wav'
                     for i in plant_id_new:
                         if i == 0:
                             pass
@@ -38,15 +37,14 @@ class readnwrite(Thread):
             plant_id_old = plant_id_new.copy()
 
 class lighting(Thread):
-    def __init__(self, end):
+    def __init__(self):
         Thread.__init__(self)
-        #self.end = end
     def run(self):
         while True:
             pass
-        #lighting code here
 
-thr1 = readnwrite()
-thr2 = lighting()
-thr1.start()
-thr2.start()
+if __name__ == "__main__": 
+    thr1 = readnwrite()
+    thr2 = lighting()
+    thr1.start()
+    thr2.start()
