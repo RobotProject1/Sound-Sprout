@@ -97,7 +97,6 @@ class volume(Thread):
             volume_percent = int((voltage / 5.0) * 100) 
             os.system(f"amixer sset 'Master' {volume_percent}%")
 
-
 if __name__ == "__main__": 
     mtime = os.path.getmtime('sound_sprout/path_list.txt')
     last_mtime = 0
