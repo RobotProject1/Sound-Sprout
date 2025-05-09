@@ -1,59 +1,42 @@
-# import board
-# import neopixel
-# import time
-
-# NUM_PIXELS = 8
-# pixels = neopixel.NeoPixel(board.D18, NUM_PIXELS, brightness=0.3, auto_write=False)
-
-# def wheel(pos):
-#     if pos < 85:
-#         return (255 - pos * 3, pos * 3, 0)
-#     elif pos < 170:
-#         pos -= 85
-#         return (0, 255 - pos * 3, pos * 3)
-#     else:
-#         pos -= 170
-#         return (pos * 3, 0, 255 - pos * 3)
-
-# def rainbow_cycle(wait):
-#     for j in range(255):
-#         for i in range(NUM_PIXELS):
-#             rc_index = (i * 256 // NUM_PIXELS) + j
-#             pixels[i] = wheel(rc_index & 255)
-#         pixels.show()
-#         time.sleep(wait)
-
-# while True:
-#     rainbow_cycle(0.05)
-
 import time
-from neopixel import Adafruit_NeoPixel, Color
+from rpi_ws281x import PixelStrip, Color
 
-LED_COUNT = 8        # Number of LED pixels.
-LED_PIN = 21         # GPIO pin (GPIO21 = physical pin 40)
+# LED strip configuration
+LED_COUNT = 10          # Number of LEDs in your strip
+LED_PIN = 18            # GPIO18 (pin 12), must be a PWM-capable pin
+LED_FREQ_HZ = 800000    # WS2812 signal frequency
+LED_DMA = 10            # DMA channel to use
+LED_BRIGHTNESS = 255    # Set brightness (0 to 255)
+LED_INVERT = False      # Invert signal (normally False)
+LED_CHANNEL = 0         # Channel 0 = GPIO18 (use 1 if you use GPIO13/pin 33)
 
-strip = Adafruit_NeoPixel(LED_COUNT, LED_PIN)
+# Create PixelStrip object and initialize
+strip = PixelStrip(LED_COUNT, LED_PIN, LED_FREQ_HZ, LED_DMA,
+                   LED_INVERT, LED_BRIGHTNESS, LED_CHANNEL)
 strip.begin()
 
-# Red
-for i in range(strip.numPixels()):
-    strip.setPixelColor(i, Color(255, 0, 0))
-strip.show()
-time.sleep(1)
+def clear_strip(strip):
+    """Turn off all LEDs"""
+    for i in range(strip.numPixels()):
+        strip.setPixelColor(i, Color(0, 0, 0))
+    strip.show()
 
-# Green
-for i in range(strip.numPixels()):
-    strip.setPixelColor(i, Color(0, 255, 0))
-strip.show()
-time.sleep(1)
+def chase_effect(strip, color, delay_ms=50, repeats=3):
+    """Light moves from start to end, repeated multiple times"""
+    for _ in range(repeats):
+        for i in range(strip.numPixels()):
+            clear_strip(strip)
+            strip.setPixelColor(i, color)
+            strip.show()
+            time.sleep(delay_ms / 1000.0)
+    clear_strip(strip)
 
-# Blue
-for i in range(strip.numPixels()):
-    strip.setPixelColor(i, Color(0, 0, 255))
-strip.show()
-time.sleep(1)
+# Main execution
+try:
+    chase_effect(strip, Color(0, 0, 255), delay_ms=100, repeats=3)  # Blue dot moves 3 times
 
-# Off
-for i in range(strip.numPixels()):
-    strip.setPixelColor(i, Color(0, 0, 0))
-strip.show()
+except KeyboardInterrupt:
+    pass
+
+finally:
+    clear_strip(strip)
