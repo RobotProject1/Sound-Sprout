@@ -16,7 +16,7 @@ track = {1:'sound_sprout/sound/winter/Daisy.wav',
          12:'sound_sprout/sound/winter/Mushroom.wav'}
 
 class readnwrite(Thread):
-    def __init__(self):
+    def __init__(self, end):
         Thread.__init__(self)
     def run(self):
         plant_id_old = []
@@ -43,7 +43,7 @@ class lighting(Thread):
         while True:
             pass
         #lighting code here
-        
+
 if __name__ == "__main__": 
     thr1 = readnwrite()
     thr2 = lighting()
