@@ -26,15 +26,34 @@
 # while True:
 #     rainbow_cycle(0.05)
 
-import neopixel
 import time
+from neopixel import Adafruit_NeoPixel, Color
 
-pixels = neopixel.NeoPixel(21, 8, brightness=0.2, auto_write=True)
+LED_COUNT = 8        # Number of LED pixels.
+LED_PIN = 21         # GPIO pin (GPIO21 = physical pin 40)
 
-pixels.fill((255, 0, 0))  # Red
+strip = Adafruit_NeoPixel(LED_COUNT, LED_PIN)
+strip.begin()
+
+# Red
+for i in range(strip.numPixels()):
+    strip.setPixelColor(i, Color(255, 0, 0))
+strip.show()
 time.sleep(1)
-pixels.fill((0, 255, 0))  # Green
+
+# Green
+for i in range(strip.numPixels()):
+    strip.setPixelColor(i, Color(0, 255, 0))
+strip.show()
 time.sleep(1)
-pixels.fill((0, 0, 255))  # Blue
+
+# Blue
+for i in range(strip.numPixels()):
+    strip.setPixelColor(i, Color(0, 0, 255))
+strip.show()
 time.sleep(1)
-pixels.fill((0, 0, 0))    # Off
+
+# Off
+for i in range(strip.numPixels()):
+    strip.setPixelColor(i, Color(0, 0, 0))
+strip.show()
