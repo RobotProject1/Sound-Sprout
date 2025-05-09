@@ -30,7 +30,7 @@ import board
 import neopixel
 import time
 
-pixels = neopixel.NeoPixel(board.D21, 8, brightness=0.2)
+pixels = neopixel.NeoPixel(21, 8, brightness=0.2, auto_write=True)
 
 pixels.fill((255, 0, 0))  # Red
 time.sleep(1)
