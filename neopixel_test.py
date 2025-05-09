@@ -26,7 +26,6 @@
 # while True:
 #     rainbow_cycle(0.05)
 
-import board
 import neopixel
 import time
 
