@@ -204,7 +204,9 @@ class checkfile(Thread):
                 else:
                     with open('path_list.txt', 'r') as file:
                         path_list = file.read()
-                        path_list = path_list.split(',')
+                        print("Raw path list from file:", repr(path_list))
+                        path_list = [p.strip() for p in path_list.split(',') if p.strip()]
+                        print("Parsed paths:", path_list)
                     print(path_list)
                     audio_clip_paths = [i for i in path_list if i != '']
                     mixed_audio, sample_rate, num_channels = mix(audio_clip_paths)
@@ -227,13 +229,15 @@ class checkfile(Thread):
 #             volume_percent = int((voltage / 5.0) * 100) 
 #             os.system(f"amixer sset 'Master' {volume_percent}%")
 
-if __name__ == "__main__": 
+if __name__ == "__main__":
     mtime = os.path.getmtime('path_list.txt')
     last_mtime = 0
     stream = None
     with open('path_list.txt', 'r') as file:
         path_list = file.read()
-        path_list = path_list.split(',')
+        print("Raw path list from file:", repr(path_list))
+        path_list = [p.strip() for p in path_list.split(',') if p.strip()]
+        print("Parsed paths:", path_list)
     print(path_list)
     audio_clip_paths = [i for i in path_list if i != '']
     mixed_audio, sample_rate, num_channels = mix(audio_clip_paths)
