@@ -139,8 +139,8 @@ from threading import Thread
 # ADS1 = ADS1x15.ADS1115(1, 0x48)
 # f = ADS1.toVoltage()
 
-# with open('path_list.txt', 'w') as file:
-#     pass
+with open('path_list.txt', 'w') as file:
+    pass
 
 def mix(audio_clip_paths):
     audio_arrays = []
