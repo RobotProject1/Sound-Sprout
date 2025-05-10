@@ -4,10 +4,10 @@ import sounddevice as sd
 import os
 import time
 from threading import Thread
-import ADS1x15
+# import ADS1x15
 
-ADS1 = ADS1x15.ADS1115(1, 0x48)
-f = ADS1.toVoltage()
+# ADS1 = ADS1x15.ADS1115(1, 0x48)
+# f = ADS1.toVoltage()
 
 with open('sound_sprout/path_list.txt', 'w') as file:
     pass
@@ -85,17 +85,17 @@ class checkfile(Thread):
                 print(f"An error occurred: {e}")
                 time.sleep(1) 
 
-class volume(Thread):
-    def __init__(self):
-        Thread.__init__(self)
-    def run(self):
-        while True:
-            raw = ADS1.readADC(0)
-            voltage = raw * f  
-            voltage = min(max(voltage, 0), 5.0)  
+# class volume(Thread):
+#     def __init__(self):
+#         Thread.__init__(self)
+#     def run(self):
+#         while True:
+#             raw = ADS1.readADC(0)
+#             voltage = raw * f  
+#             voltage = min(max(voltage, 0), 5.0)  
 
-            volume_percent = int((voltage / 5.0) * 100) 
-            os.system(f"amixer sset 'Master' {volume_percent}%")
+#             volume_percent = int((voltage / 5.0) * 100) 
+#             os.system(f"amixer sset 'Master' {volume_percent}%")
 
 if __name__ == "__main__": 
     mtime = os.path.getmtime('sound_sprout/path_list.txt')
@@ -112,6 +112,6 @@ if __name__ == "__main__":
     stream.start()
 
     checkfile_thread = checkfile()
-    adjust_volume_thread = volume()
+    # adjust_volume_thread = volume()
     checkfile_thread.start()
-    adjust_volume_thread.start()
+    # adjust_volume_thread.start()
