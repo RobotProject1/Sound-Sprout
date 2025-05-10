@@ -204,9 +204,7 @@ class checkfile(Thread):
                 else:
                     with open('path_list.txt', 'r') as file:
                         path_list = file.read()
-                        print("Raw path list from file:", repr(path_list))
-                        path_list = [p.strip() for p in path_list.split(',') if p.strip()]
-                        print("Parsed paths:", path_list)
+                        path_list = path_list.split(',')
                     print(path_list)
                     audio_clip_paths = [i for i in path_list if i != '']
                     mixed_audio, sample_rate, num_channels = mix(audio_clip_paths)
@@ -235,9 +233,7 @@ if __name__ == "__main__":
     stream = None
     with open('path_list.txt', 'r') as file:
         path_list = file.read()
-        print("Raw path list from file:", repr(path_list))
-        path_list = [p.strip() for p in path_list.split(',') if p.strip()]
-        print("Parsed paths:", path_list)
+        path_list = path_list.split(',')
     print(path_list)
     audio_clip_paths = [i for i in path_list if i != '']
     mixed_audio, sample_rate, num_channels = mix(audio_clip_paths)
