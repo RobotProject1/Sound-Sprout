@@ -27,7 +27,7 @@
 
 import board
 import busio
-from adafruit_ads1x15.ads1115 import ADS1115, Mode
+from adafruit_ads1x15.ads1115 import ADS1115
 from adafruit_ads1x15.analog_in import AnalogIn
 
 # I2C setup
@@ -36,10 +36,6 @@ i2c = busio.I2C(board.SCL, board.SDA)
 # Initialize both ADS1115 devices with their I2C addresses
 ads1 = ADS1115(i2c, address=0x48)
 ads2 = ADS1115(i2c, address=0x49)
-
-# Optional: set data rate or mode (single-shot or continuous)
-ads1.mode = Mode.SINGLE
-ads2.mode = Mode.SINGLE
 
 # Channel mapping
 pin1 = [0, 1, 2]  # A0, A1, A2 on ADS1
