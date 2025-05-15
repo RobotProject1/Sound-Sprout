@@ -38,8 +38,8 @@ i2c = busio.I2C(board.SCL, board.SDA)
 ads2 = ADS1115(i2c, address=0x49)
 
 # Channel mapping
-pin1 = [0, 1, 2]  # A0, A1, A2 on ADS1
-pin2 = [0, 1, 2]  # A0, A1, A2 on ADS2
+pin1 = [1, 2, 3]  # A0, A1, A2 on ADS1
+pin2 = [1, 2, 3]  # A0, A1, A2 on ADS2
 
 # Voltage-ID mapping
 id2v_dict = [(4.78, 1), (4.35, 2), (3.98, 3), (3.64, 4), (3.33, 5), (3.03, 6),
