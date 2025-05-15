@@ -28,7 +28,7 @@
 import board
 import busio
 from adafruit_ads1x15.ads1115 import ADS1115
-from adafruit_ads1x15.analog_in import AnalogIn
+from adafruit_ads1x15.analog_in import AnalogIn, P0, P1, P2
 
 # I2C setup
 i2c = busio.I2C(board.SCL, board.SDA)
@@ -38,8 +38,8 @@ i2c = busio.I2C(board.SCL, board.SDA)
 ads2 = ADS1115(i2c, address=0x49)
 
 # Channel mapping
-pin1 = [1, 2, 3]  # A0, A1, A2 on ADS1
-pin2 = [1, 2, 3]  # A0, A1, A2 on ADS2
+# pin1 = [1, 2, 3]  # A0, A1, A2 on ADS1
+pin2 = [P0, P1, P2]  # A0, A1, A2 on ADS2
 
 # Voltage-ID mapping
 id2v_dict = [(4.78, 1), (4.35, 2), (3.98, 3), (3.64, 4), (3.33, 5), (3.03, 6),
@@ -51,8 +51,8 @@ def read_v():
     # for i in pin1:
     #     chan = AnalogIn(ads1, getattr(ADS1115, f"P{i}"))
     #     v_list.append(chan.voltage)
-    for i in pin2:
-        chan = AnalogIn(ads2, getattr(ADS1115, f"P{i}"))
+    for pin in pin2:
+        chan = AnalogIn(ads2, pin)
         v_list.append(chan.voltage)
     return v_list
 
