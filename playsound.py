@@ -4,10 +4,10 @@ import sounddevice as sd
 import os
 import time
 from threading import Thread
-# import ADS1x15
+import ADS1x15
 
-# ADS1 = ADS1x15.ADS1115(1, 0x48)
-# f = ADS1.toVoltage()
+ADS1 = ADS1x15.ADS1115(1, 0x48)
+f = ADS1.toVoltage()
 
 # with open('sound_sprout/path_list.txt', 'w') as file:
 #     pass

@@ -36,16 +36,6 @@ class readnwrite(Thread):
                     file.write(path_list)
             plant_id_old = plant_id_new.copy()
 
-class lighting(Thread):
-    def __init__(self):
-        Thread.__init__(self)
-    def run(self):
-        while True:
-            pass
-        #lighting code here
-
 if __name__ == "__main__": 
     thr1 = readnwrite()
-    thr2 = lighting()
     thr1.start()
-    thr2.start()

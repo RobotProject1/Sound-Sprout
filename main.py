@@ -96,7 +96,6 @@ class choose_season(Thread):
                     run_script('winter_sound.py')
                 ss_new = ''
 
-
 if __name__ == '__main__':
     onoff_pin = 18
     GPIO.setmode(GPIO.BCM)  
