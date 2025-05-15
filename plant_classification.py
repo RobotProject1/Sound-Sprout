@@ -34,7 +34,7 @@ from adafruit_ads1x15.analog_in import AnalogIn
 i2c = busio.I2C(board.SCL, board.SDA)
 
 # Initialize both ADS1115 devices with their I2C addresses
-ads1 = ADS1115(i2c, address=0x48)
+# ads1 = ADS1115(i2c, address=0x48)
 ads2 = ADS1115(i2c, address=0x49)
 
 # Channel mapping
@@ -48,9 +48,9 @@ id2v_dict = [(4.78, 1), (4.35, 2), (3.98, 3), (3.64, 4), (3.33, 5), (3.03, 6),
 # Read voltages from both chips
 def read_v():
     v_list = []
-    for i in pin1:
-        chan = AnalogIn(ads1, getattr(ADS1115, f"P{i}"))
-        v_list.append(chan.voltage)
+    # for i in pin1:
+    #     chan = AnalogIn(ads1, getattr(ADS1115, f"P{i}"))
+    #     v_list.append(chan.voltage)
     for i in pin2:
         chan = AnalogIn(ads2, getattr(ADS1115, f"P{i}"))
         v_list.append(chan.voltage)
