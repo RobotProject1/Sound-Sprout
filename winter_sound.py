@@ -16,7 +16,7 @@ track = {1:'sound_sprout/sound/winter/Daisy.wav',
          12:'sound_sprout/sound/winter/Mushroom.wav'}
 
 class readnwrite(Thread):
-    def __init__(self, end):
+    def __init__(self):
         Thread.__init__(self)
     def run(self):
         plant_id_old = []
