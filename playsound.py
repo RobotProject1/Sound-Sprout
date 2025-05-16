@@ -6,11 +6,11 @@ import time
 from threading import Thread
 import board
 import busio
-from adafruit_ads1x15.ads1115 import ADS1115
-from adafruit_ads1x15.analog_in import AnalogIn
+# from adafruit_ads1x15.ads1115 import ADS1115
+# from adafruit_ads1x15.analog_in import AnalogIn
 
-i2c = busio.I2C(board.SCL, board.SDA)
-ads = ADS1115(i2c, address=0x48)
+# i2c = busio.I2C(board.SCL, board.SDA)
+# ads = ADS1115(i2c, address=0x48)
 
 # with open('sound_sprout/path_list.txt', 'w') as file:
 #     pass
@@ -88,17 +88,17 @@ class checkfile(Thread):
                 print(f"An error occurred: {e}")
                 time.sleep(1) 
 
-class volume(Thread):
-    def __init__(self):
-        Thread.__init__(self)
-    def run(self):
-        while True:
-            vol = AnalogIn(ads, 0)
-            voltage = vol.voltage
-            voltage = min(max(voltage, 0), 5.0)  
+# class volume(Thread):
+#     def __init__(self):
+#         Thread.__init__(self)
+#     def run(self):
+#         while True:
+#             vol = AnalogIn(ads, 0)
+#             voltage = vol.voltage
+#             voltage = min(max(voltage, 0), 5.0)  
 
-            volume_percent = int((voltage / 5.0) * 100) 
-            os.system(f"amixer sset 'Master' {volume_percent}%")
+#             volume_percent = int((voltage / 5.0) * 100) 
+#             os.system(f"amixer sset 'Master' {volume_percent}%")
 
 if __name__ == "__main__": 
     mtime = os.path.getmtime('sound_sprout/path_list.txt')
@@ -115,6 +115,6 @@ if __name__ == "__main__":
     stream.start()
 
     checkfile_thread = checkfile()
-    adjust_volume_thread = volume()
+    # adjust_volume_thread = volume()
     checkfile_thread.start()
-    adjust_volume_thread.start()
+    # adjust_volume_thread.start()
