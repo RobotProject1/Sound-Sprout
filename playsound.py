@@ -79,7 +79,7 @@ class checkfile(Thread):
                         path_list = file.read()
                         path_list = path_list.split(',')
                     print(path_list)
-                    audio_clip_paths = [i for i in path_list if i != '']
+                    audio_clip_paths = [i.strip() for i in path_list if i.strip()]
                     mixed_audio, sample_rate, num_channels = mix(audio_clip_paths)
                     print(mixed_audio.shape, sample_rate, num_channels)
                     self.last_mtime = mtime
@@ -108,7 +108,7 @@ if __name__ == "__main__":
         path_list = file.read()
         path_list = path_list.split(',')
     print(path_list)
-    audio_clip_paths = [i for i in path_list if i != '']
+    audio_clip_paths = [i.strip() for i in path_list if i.strip()]
     mixed_audio, sample_rate, num_channels = mix(audio_clip_paths)
     index = 0
     stream = sd.OutputStream(samplerate=sample_rate, channels=num_channels, callback=callback )
