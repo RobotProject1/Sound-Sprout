@@ -115,6 +115,6 @@ if __name__ == "__main__":
     stream.start()
 
     checkfile_thread = checkfile()
-    # adjust_volume_thread = volume()
+    adjust_volume_thread = volume()
     checkfile_thread.start()
-    # adjust_volume_thread.start()
+    adjust_volume_thread.start()
