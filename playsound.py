@@ -105,8 +105,8 @@ if __name__ == "__main__":
     last_mtime = 0
     stream = None
     with open('sound_sprout/path_list.txt', 'r') as file:
-        path_list = file.read()
-        path_list = path_list.split(',')
+        path_list = file.read().strip()
+        path_list = [p.strip() for p in path_list.split(',') if p.strip()]
     print(path_list)
     audio_clip_paths = [i.strip() for i in path_list if i.strip()]
     mixed_audio, sample_rate, num_channels = mix(audio_clip_paths)
