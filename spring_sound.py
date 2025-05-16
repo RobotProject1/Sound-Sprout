@@ -27,7 +27,6 @@ class readnwrite(Thread):
                 pass
             else:
                 with open('sound_sprout/path_list.txt', 'w') as file:
-                    path_list = 'sound_sprout/sound/spring/AMBIENT.wav'
                     for i in plant_id_new:
                         if i == 0:
                             pass
@@ -39,4 +38,3 @@ class readnwrite(Thread):
 if __name__ == "__main__": 
     thr1 = readnwrite()
     thr1.start()
-
