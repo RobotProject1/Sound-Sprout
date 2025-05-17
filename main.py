@@ -50,6 +50,8 @@ def run_script(script_name): # ex 'lighting_rainy.py'
 
 GPIO.cleanup()
 GPIO.setmode(GPIO.BCM)
+GPIO.setwarnings(False)
+
 rainy_pin = 4 #physical 7
 spring_pin = 19 #physical 35
 winter_pin = 8 #physical 24
