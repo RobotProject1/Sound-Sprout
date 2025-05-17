@@ -48,6 +48,7 @@ def run_script(script_name): # ex 'lighting_rainy.py'
     script_path = os.path.join(os.path.dirname(__file__), script_name)
     subprocess.Popen([sys.executable, script_path], shell=True)
 
+GPIO.cleanup()
 GPIO.setmode(GPIO.BCM)
 rainy_pin = 4 #physical 7
 spring_pin = 19 #physical 35
