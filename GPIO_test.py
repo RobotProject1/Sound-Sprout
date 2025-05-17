@@ -7,7 +7,7 @@ GPIO.setup(26, GPIO.IN)
 
 try:
     while True:
-        if GPIO.input(7) == GPIO.HIGH:
+        if GPIO.input(26) == GPIO.HIGH:
             print("Pin 26 is HIGH")
         else:
             print("Pin 26 is LOW")
