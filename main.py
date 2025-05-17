@@ -49,9 +49,9 @@ def run_script(script_name): # ex 'lighting_rainy.py'
     subprocess.Popen([sys.executable, script_path], shell=True)
 
 GPIO.setmode(GPIO.BCM)
-rainy_pin = 18
-spring_pin = 23
-winter_pin = 24
+rainy_pin = 4 #physical 7
+spring_pin = 19 #physical 35
+winter_pin = 8 #physical 24
 
 GPIO.setup(rainy_pin, GPIO.IN)  # button pin set as input
 GPIO.setup(spring_pin, GPIO.IN)  # button pin set as input  
@@ -97,7 +97,7 @@ class choose_season(Thread):
                 ss_new = ''
 
 if __name__ == '__main__':
-    onoff_pin = 18
+    onoff_pin = 7 #physical 26
     GPIO.setmode(GPIO.BCM)  
     GPIO.setup(onoff_pin, GPIO.IN)
     target_scripts = ['playsound.py','summer_sound.py','rain_sound.py','winter_sound.py']
