@@ -1,13 +1,16 @@
 import Jetson.GPIO as GPIO
+import time
 
 GPIO.setmode(GPIO.BOARD)
-GPIO.setwarnings(False)  # Disable warnings
-
+GPIO.setwarnings(False)
 GPIO.setup(24, GPIO.IN)
 
 try:
-    print("Waiting for rising edge on pin 24...")
-    GPIO.wait_for_edge(24, GPIO.RISING)
-    print("ON")
+    while True:
+        if GPIO.input(24) == GPIO.HIGH:
+            print("Pin 24 is HIGH")
+        else:
+            print("Pin 24 is LOW")
+        time.sleep(0.5)  # check twice a second
 finally:
     GPIO.cleanup()
