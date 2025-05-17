@@ -103,11 +103,13 @@ if __name__ == '__main__':
     target_scripts = ['playsound.py','summer_sound.py','rain_sound.py','winter_sound.py']
     while True:
         GPIO.wait_for_edge(onoff_pin, GPIO.RISING)
+        print("ON button pressed. Starting system...")
         time.sleep(0.3)
         choose_season_thread = choose_season()
         choose_season_thread.start()
         run_script('playsound.py')
         GPIO.wait_for_edge(onoff_pin, GPIO.RISING)
+        print("OFF button pressed. Stopping system...")
         time.sleep(0.3)
         choose_season_thread.stop()
         ss_old = ''
