@@ -93,7 +93,7 @@ class volume(Thread):
         Thread.__init__(self)
     def run(self):
         while True:
-            vol = AnalogIn(ads, 4)
+            vol = AnalogIn(ads, ADS1115.P3)
             voltage = vol.voltage
             voltage = min(max(voltage, 0), 5.0)  
 
