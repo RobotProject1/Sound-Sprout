@@ -1,20 +1,13 @@
 import Jetson.GPIO as GPIO
-import time
 
 # Set up the GPIO mode to BOARD
 GPIO.setmode(GPIO.BOARD)  # You can also use GPIO.BCM
 
 # Set up the GPIO pin (e.g., pin 11) as an output
-GPIO.setup(12, GPIO.OUT)
+GPIO.setup(26, GPIO.IN)
 
-# Toggle the GPIO pin 5 times
-for _ in range(5):
-    GPIO.output(12, GPIO.HIGH)  # Set the pin HIGH (3.3V)
-    print("Pin 12 is HIGH")
-    time.sleep(1)               # Wait for 1 second
-    GPIO.output(12, GPIO.LOW)   # Set the pin LOW (0V)
-    print("Pin 12 is LOW")
-    time.sleep(1)               # Wait for 1 second
+if GPIO.wait_for_edge(26, GPIO.RISING):
+    print("ON")
 
 # Clean up the GPIO configuration
 GPIO.cleanup()
