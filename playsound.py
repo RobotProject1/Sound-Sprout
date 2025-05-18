@@ -51,6 +51,10 @@ def mix(audio_clip_paths):
 
 def callback(outdata, frames, time, status):
     global index,just_looped,mixed_audio
+    if not os.path.exists('sound_sprout/active.flag'):
+        outdata[:] = np.zeros_like(outdata)
+        return
+
     total_frames = mixed_audio.shape[0]
     end_index = index + frames
     if end_index <= total_frames:

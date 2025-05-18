@@ -104,16 +104,19 @@ if __name__ == '__main__':
     onoff_pin = 7 #physical 26
     GPIO.setmode(GPIO.BCM)  
     GPIO.setup(onoff_pin, GPIO.IN)
-    target_scripts = ['playsound.py','summer_sound.py','rain_sound.py','winter_sound.py']
+    target_scripts = ['playsound.py','spring_sound.py','rain_sound.py','winter_sound.py']
+    run_script('playsound.py')
     while True:
         GPIO.wait_for_edge(onoff_pin, GPIO.RISING)
         print("ON button pressed. Starting system...")
+        open('sound_sprout/active.flag', 'w').close()
         time.sleep(0.3)
         choose_season_thread = choose_season()
         choose_season_thread.start()
-        run_script('playsound.py')
         GPIO.wait_for_edge(onoff_pin, GPIO.RISING)
         print("OFF button pressed. Stopping system...")
+        if os.path.exists('sound_sprout/active.flag'):
+            os.remove('sound_sprout/active.flag')
         time.sleep(0.3)
         choose_season_thread.stop()
         ss_old = ''
