@@ -111,7 +111,7 @@ if __name__ == "__main__":
     audio_clip_paths = [i.strip() for i in path_list if i.strip()]
     mixed_audio, sample_rate, num_channels = mix(audio_clip_paths)
     index = 0
-    stream = sd.OutputStream(samplerate=sample_rate, channels=num_channels, callback=callback, blocksize=1024)
+    stream = sd.OutputStream(samplerate=sample_rate, channels=num_channels, callback=callback, blocksize=4096)
     stream.start()
 
     checkfile_thread = checkfile()

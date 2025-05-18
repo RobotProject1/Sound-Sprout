@@ -25,11 +25,14 @@ def read_v():
 
 def read_id(v_list):
     id_list = []
+    valid_ids = set(range(1,13))
     for v in v_list:
         matched_id = 0
         for volt, id in id2v_dict:
             if abs(v - volt) < 0.05:
-                matched_id = id
-                break
-        id_list.append(matched_id)
+                if id in valid_ids:
+                    matched_id = id
+                    break
+        if matched_id != 0:
+            id_list.append(matched_id)
     return id_list
