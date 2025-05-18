@@ -118,3 +118,4 @@ if __name__ == "__main__":
     adjust_volume_thread = volume()
     checkfile_thread.start()
     adjust_volume_thread.start()
+    print("Playsound good to go!")
