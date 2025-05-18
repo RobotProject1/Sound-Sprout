@@ -33,7 +33,7 @@ class readnwrite(Thread):
                             pass
                         else:
                             path_list += ','+track[i]
-                    file.write(path_list)
+                    file.write(path_list.lstrip(','))
             plant_id_old = plant_id_new.copy()
 
 if __name__ == "__main__": 
