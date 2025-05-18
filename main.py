@@ -48,9 +48,9 @@ def run_script(script_name): # ex 'lighting_rainy.py'
     script_path = os.path.join(os.path.dirname(__file__), script_name)
     subprocess.Popen([sys.executable, script_path], shell=True)
 
+GPIO.setwarnings(False)
 GPIO.cleanup()
 GPIO.setmode(GPIO.BCM)
-GPIO.setwarnings(False)
 
 winter_pin = 4 #physical 7
 spring_pin = 8 #physical 24
