@@ -26,6 +26,7 @@ class readnwrite(Thread):
             if plant_id_new == plant_id_old:
                 pass
             else:
+                path_list = ""
                 with open('sound_sprout/path_list.txt', 'w') as file:
                     for i in plant_id_new:
                         if i == 0:
