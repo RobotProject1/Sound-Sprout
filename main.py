@@ -46,6 +46,7 @@ def run_script(script_name): # ex 'lighting_rainy.py'
     Run a Python script using subprocess, cross-platform.
     """
     script_path = os.path.join(os.path.dirname(__file__), script_name)
+    print(f"Running script: {script_path}")
     subprocess.Popen([sys.executable, script_path], shell=True)
 
 GPIO.setwarnings(False)
