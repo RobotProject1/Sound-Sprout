@@ -52,9 +52,9 @@ GPIO.cleanup()
 GPIO.setmode(GPIO.BCM)
 GPIO.setwarnings(False)
 
-rainy_pin = 4 #physical 7
-spring_pin = 19 #physical 35
-winter_pin = 8 #physical 24
+winter_pin = 4 #physical 7
+spring_pin = 8 #physical 24
+rainy_pin = 19 #physical 35
 
 GPIO.setup(rainy_pin, GPIO.IN)  # button pin set as input
 GPIO.setup(spring_pin, GPIO.IN)  # button pin set as input  
