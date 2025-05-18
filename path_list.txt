@@ -1,1 +1,1 @@
-sound_sprout/sound/spring/Daisy.wav
+sound_sprout/sound/spring/Carrot.wav
