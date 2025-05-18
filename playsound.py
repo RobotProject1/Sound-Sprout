@@ -91,14 +91,18 @@ class checkfile(Thread):
 class volume(Thread):
     def __init__(self):
         Thread.__init__(self)
+        self.last_volume_percent = None
     def run(self):
         while True:
             vol = AnalogIn(ads, 3)
             voltage = vol.voltage
             voltage = min(max(voltage, 0), 5.0)  
+            volume_percent = int((voltage / 5.0) * 100)
 
-            volume_percent = int((voltage / 5.0) * 100) 
-            os.system(f"pactl set-sink-volume @DEFAULT_SINK@ {volume_percent}%")
+            if self.last_volume_percent is None or abs(volume_percent - self.last_volume_percent) >= 5:
+                os.system(f"pactl set-sink-volume @DEFAULT_SINK@ {volume_percent}%")
+                self.last_volume_percent = volume_percent
+            time.sleep(0.3)
 
 if __name__ == "__main__": 
     mtime = os.path.getmtime('sound_sprout/path_list.txt')
