@@ -42,6 +42,8 @@ pin2 = [0, 1, 2]
 voltage_queues_1 = {pin: deque(maxlen=5) for pin in pin1}
 voltage_queues_2 = {pin: deque(maxlen=5) for pin in pin2}
 
+id2v_dict = [(4.10, 1), (3.87, 2), (3.67, 3), (3.59, 4), (3.20, 5), (2.98, 6), (2.64, 7), (2.18, 8), (1.99, 9), (1.75, 10), (1.50, 11), (1.15, 12)]
+
 def read_v():
     v_list = []
     # Read ads1 pins
