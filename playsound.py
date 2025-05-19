@@ -5,7 +5,7 @@ import os
 import time
 from threading import Thread
 from adafruit_ads1x15.analog_in import AnalogIn
-from shared_ads import ads2
+from shared_ads import ads2, ads2_lock
 
 # with open('sound_sprout/path_list.txt', 'w') as file:
 #     pass
@@ -84,14 +84,12 @@ class checkfile(Thread):
                 time.sleep(1) 
 
 class volume(Thread):
-    def __init__(self):
-        Thread.__init__(self)
     def run(self):
         while True:
-            vol = AnalogIn(ads2, 3)
-            voltage = vol.voltage
+            with ads2_lock:
+                vol = AnalogIn(ads2, 3)
+                voltage = vol.voltage
             voltage = min(max(voltage, 0), 5.0)  
-            
             volume_percent = int((voltage / 5.0) * 100)
             os.system(f"pactl set-sink-volume @DEFAULT_SINK@ {volume_percent}%")
 
