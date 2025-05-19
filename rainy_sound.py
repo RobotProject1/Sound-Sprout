@@ -27,7 +27,7 @@ class readnwrite(Thread):
                 pass
             else:
                 with open('sound_sprout/path_list.txt', 'w') as file:
-                    path_list = 'sound_sprout/sound/Rainy/AMBIENT.wav'
+                    path_list = 'sound_sprout/sound/rainy/AMBIENT.wav'
                     for i in plant_id_new:
                         if i == 0:
                             pass
