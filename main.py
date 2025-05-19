@@ -103,8 +103,9 @@ if __name__ == '__main__':
     GPIO.setup(onoff_pin, GPIO.IN)
     # target_scripts = ['playsound.py','plant_classification','spring_sound.py','rainy_sound.py','winter_sound.py']
     # run_script('playsound.py')
-    target_scripts = ['merged.py','plant_classification','spring_sound.py','rainy_sound.py','winter_sound.py']
-    run_script('merged.py')
+    target_scripts = ['merged.py','spring_sound.py','rainy_sound.py','winter_sound.py']
+    import merged
+    merged.start()
     while True:
         GPIO.wait_for_edge(onoff_pin, GPIO.RISING)
         print("ON button pressed. Starting system...")
