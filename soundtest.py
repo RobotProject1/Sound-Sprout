@@ -1,3 +1,14 @@
+import os
+import time
+from threading import Thread
+import board
+import busio
+from adafruit_ads1x15.ads1115 import ADS1115
+from adafruit_ads1x15.analog_in import AnalogIn
+
+i2c = busio.I2C(board.SCL, board.SDA)
+ads = ADS1115(i2c, address=0x49)
+
 class VolumeTest(Thread):
     def __init__(self):
         Thread.__init__(self)
