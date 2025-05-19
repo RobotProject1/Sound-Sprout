@@ -14,7 +14,7 @@ import board
 from adafruit_ads1x15.analog_in import AnalogIn
 
 i2c = busio.I2C(board.SCL, board.SDA)
-ads1 = ADS.ADS1115(i2c, address=0x48)
-ads2 = ADS.ADS1115(i2c, address=0x49)
+ads1 = ADS1115(i2c, address=0x48)
+ads2 = ADS1115(i2c, address=0x49)
 ads2.gain = 4  # set gain to ±4.096V; try 2 for ±2.048V or 4 for ±1.024V
 ads2.mode = Mode.SINGLE  # Use SINGLE mode (slower, more precise)
