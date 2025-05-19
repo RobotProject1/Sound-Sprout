@@ -93,7 +93,7 @@ class volume(Thread):
             voltage = min(max(voltage, 0), 5.0)  
             
             volume_percent = int((voltage / 5.0) * 100)
-            os.system(f"pactl set-sink-volume @DEFAULT_SINK@ {volume_percent}%")
+            os.system(f"amixer set 'Master' {volume_percent}%")
 
 if __name__ == "__main__": 
     mtime = os.path.getmtime('sound_sprout/path_list.txt')
