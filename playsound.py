@@ -84,38 +84,38 @@ class checkfile(Thread):
                 print(f"An error occurred: {e}")
                 time.sleep(1) 
 
-# class volume(Thread):
-#     def __init__(self):
-#         Thread.__init__(self)
-#     def run(self):
-#         while True:
-#             vol = AnalogIn(ads2, 3)
-#             voltage = vol.voltage
-#             voltage = min(max(voltage, 0), 5.0)  
-            
-#             volume_percent = int((voltage / 5.0) * 100)
-#             os.system(f"pactl set-sink-volume @DEFAULT_SINK@ {volume_percent}%")
-
 class volume(Thread):
     def __init__(self):
-        super().__init__()
-        self.last_set = -1
-
+        Thread.__init__(self)
     def run(self):
         while True:
-            try:
-                vol = AnalogIn(ads2, 3)
-                voltage = min(max(vol.voltage, 0.0), 5.0)
-                volume_percent = int((voltage / 5.0) * 100)
+            vol = AnalogIn(ads2, 3)
+            voltage = vol.voltage
+            voltage = min(max(voltage, 0), 5.0)  
+            
+            volume_percent = int((voltage / 5.0) * 100)
+            os.system(f"pactl set-sink-volume @DEFAULT_SINK@ {volume_percent}%")
 
-                # Avoid redundant pactl calls
-                if abs(volume_percent - self.last_set) >= 2:
-                    subprocess.Popen(["pactl", "set-sink-volume", "@DEFAULT_SINK@", f"{volume_percent}%"])
-                    subprocess.Popen(["pactl", "set-sink-mute", "@DEFAULT_SINK@", "0"])
-                    self.last_set = volume_percent
+# class volume(Thread):
+#     def __init__(self):
+#         super().__init__()
+#         self.last_set = -1
 
-            except Exception as e:
-                print(f"[Volume Thread Error] {e}")
+#     def run(self):
+#         while True:
+#             try:
+#                 vol = AnalogIn(ads2, 3)
+#                 voltage = min(max(vol.voltage, 0.0), 5.0)
+#                 volume_percent = int((voltage / 5.0) * 100)
+
+#                 # Avoid redundant pactl calls
+#                 if abs(volume_percent - self.last_set) >= 2:
+#                     subprocess.Popen(["pactl", "set-sink-volume", "@DEFAULT_SINK@", f"{volume_percent}%"])
+#                     subprocess.Popen(["pactl", "set-sink-mute", "@DEFAULT_SINK@", "0"])
+#                     self.last_set = volume_percent
+
+#             except Exception as e:
+#                 print(f"[Volume Thread Error] {e}")
 
 if __name__ == "__main__": 
     mtime = os.path.getmtime('sound_sprout/path_list.txt')
