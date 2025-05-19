@@ -4,13 +4,8 @@ import sounddevice as sd
 import os
 import time
 from threading import Thread
-import board
-import busio
-from adafruit_ads1x15.ads1115 import ADS1115
 from adafruit_ads1x15.analog_in import AnalogIn
-
-i2c = busio.I2C(board.SCL, board.SDA)
-ads = ADS1115(i2c, address=0x49)
+from shared_ads import ads2
 
 # with open('sound_sprout/path_list.txt', 'w') as file:
 #     pass
@@ -93,7 +88,7 @@ class volume(Thread):
         Thread.__init__(self)
     def run(self):
         while True:
-            vol = AnalogIn(ads, 3)
+            vol = AnalogIn(ads2, 3)
             voltage = vol.voltage
             voltage = min(max(voltage, 0), 5.0)  
             

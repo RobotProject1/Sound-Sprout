@@ -1,11 +1,6 @@
-import board
-import busio
 from adafruit_ads1x15.ads1115 import ADS1115
 from adafruit_ads1x15.analog_in import AnalogIn
-
-i2c = busio.I2C(board.SCL, board.SDA)
-ads1 = ADS1115(i2c, address=0x48)
-ads2 = ADS1115(i2c, address=0x49)
+from shared_ads import ads1, ads2
 
 pin1 = [0, 1, 2]
 pin2 = [0, 1, 2]
