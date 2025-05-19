@@ -1,4 +1,3 @@
-# from threading import Lock
 # import board
 # import busio
 # from adafruit_ads1x15.ads1115 import ADS1115
