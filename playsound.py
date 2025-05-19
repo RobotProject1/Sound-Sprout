@@ -4,6 +4,7 @@ import sounddevice as sd
 import os
 import time
 from threading import Thread
+import subprocess
 from adafruit_ads1x15.analog_in import AnalogIn
 from shared_ads import ads2
 
@@ -83,17 +84,38 @@ class checkfile(Thread):
                 print(f"An error occurred: {e}")
                 time.sleep(1) 
 
+# class volume(Thread):
+#     def __init__(self):
+#         Thread.__init__(self)
+#     def run(self):
+#         while True:
+#             vol = AnalogIn(ads2, 3)
+#             voltage = vol.voltage
+#             voltage = min(max(voltage, 0), 5.0)  
+            
+#             volume_percent = int((voltage / 5.0) * 100)
+#             os.system(f"pactl set-sink-volume @DEFAULT_SINK@ {volume_percent}%")
+
 class volume(Thread):
     def __init__(self):
-        Thread.__init__(self)
+        super().__init__()
+        self.last_set = -1
+
     def run(self):
         while True:
-            vol = AnalogIn(ads2, 3)
-            voltage = vol.voltage
-            voltage = min(max(voltage, 0), 5.0)  
-            
-            volume_percent = int((voltage / 5.0) * 100)
-            os.system(f"amixer set 'Master' {volume_percent}%")
+            try:
+                vol = AnalogIn(ads2, 3)
+                voltage = min(max(vol.voltage, 0.0), 5.0)
+                volume_percent = int((voltage / 5.0) * 100)
+
+                # Avoid redundant pactl calls
+                if abs(volume_percent - self.last_set) >= 2:
+                    subprocess.Popen(["pactl", "set-sink-volume", "@DEFAULT_SINK@", f"{volume_percent}%"])
+                    subprocess.Popen(["pactl", "set-sink-mute", "@DEFAULT_SINK@", "0"])
+                    self.last_set = volume_percent
+
+            except Exception as e:
+                print(f"[Volume Thread Error] {e}")
 
 if __name__ == "__main__": 
     mtime = os.path.getmtime('sound_sprout/path_list.txt')
@@ -106,7 +128,7 @@ if __name__ == "__main__":
     audio_clip_paths = [i.strip() for i in path_list if i.strip()]
     mixed_audio, sample_rate, num_channels = mix(audio_clip_paths)
     index = 0
-    stream = sd.OutputStream(samplerate=sample_rate, channels=num_channels, callback=callback, blocksize=4096)
+    stream = sd.OutputStream(samplerate=sample_rate, channels=num_channels, callback=callback, blocksize=8192)
     stream.start()
 
     checkfile_thread = checkfile()
