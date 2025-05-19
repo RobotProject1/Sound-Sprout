@@ -88,7 +88,7 @@ class choose_season(Thread):
             if ss_new == ss_old:
                 pass
             else:
-                ss_old = ss_new
+                ss_old = ss_new[:]
                 kill_python_scripts_by_name(['spring_sound.py', 'rainy_sound.py','winter_sound.py'])
                 if ss_new == 'rainy':
                     run_script('rainy_sound.py')
