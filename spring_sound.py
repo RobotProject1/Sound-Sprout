@@ -1,5 +1,4 @@
-# from plant_classification import read_id,read_v
-from merged import read_id, read_v
+from plant_classification import read_id,read_v
 from threading import Thread
 
 #1=daisy 2=sunflower 3=clover 4=potato 5=radish 6=carrot 7=garlic 8=pumpkin 9=tomato 10=corn 11=cauliflower 12=mushroom

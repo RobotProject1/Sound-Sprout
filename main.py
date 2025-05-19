@@ -48,7 +48,7 @@ def run_script(script_name): # ex 'lighting_rainy.py'
 
 GPIO.setwarnings(False)
 GPIO.cleanup()
-# GPIO.setmode(GPIO.BCM)
+GPIO.setmode(GPIO.BCM)
 
 winter_pin = 4 #physical 7
 spring_pin = 8 #physical 24
@@ -101,11 +101,8 @@ if __name__ == '__main__':
     onoff_pin = 7 #physical 26
     GPIO.setmode(GPIO.BCM)  
     GPIO.setup(onoff_pin, GPIO.IN)
-    # target_scripts = ['playsound.py','plant_classification','spring_sound.py','rainy_sound.py','winter_sound.py']
-    # run_script('playsound.py')
-    target_scripts = ['merged.py','spring_sound.py','rainy_sound.py','winter_sound.py']
-    import merged
-    merged.start()
+    target_scripts = ['playsound.py','plant_classification','spring_sound.py','rainy_sound.py','winter_sound.py']
+    run_script('playsound.py')
     while True:
         GPIO.wait_for_edge(onoff_pin, GPIO.RISING)
         print("ON button pressed. Starting system...")
