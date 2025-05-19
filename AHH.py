@@ -8,7 +8,7 @@ from adafruit_ads1x15.analog_in import AnalogIn
 i2c = busio.I2C(board.SCL, board.SDA)
 
 # Create ADC object
-ads = ADS1115(i2c)
+ads = ADS1115(i2c, address=0x49)
 
 # Create single-ended input channels
 chan0 = AnalogIn(ads, 0)  # A0 (Button 1)
