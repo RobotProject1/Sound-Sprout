@@ -129,11 +129,11 @@ class volume(Thread):
                     volume_percent = 100
 
                 print(f"Voltage: {voltage:.2f} V → Volume: {volume_percent}%")
-                
+
                 if volume_percent != self.last_volume:
                     os.system(f"pactl set-sink-volume @DEFAULT_SINK@ {volume_percent}%")
                     self.last_volume = volume_percent
-                time.sleep(0.5)
+                time.sleep(0.2)
 
             except Exception as e:
                 print(f"Volume control error: {e}")
