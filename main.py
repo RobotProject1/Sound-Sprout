@@ -12,7 +12,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 # GPIO Pin Configuration
-ONOFF_PIN = 16  # Physical 21
+ONOFF_PIN = 9  # Physical 21
 SEASONS = {
     'rainy': {'pin': 19, 'script': 'rainy_sound.py'},  # Physical 35
     'spring': {'pin': 8, 'script': 'spring_sound.py'},  # Physical 24
