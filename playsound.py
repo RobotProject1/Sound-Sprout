@@ -105,7 +105,9 @@ class volume(Thread):
                 voltage = vol.voltage
                 voltage = min(max(voltage, 0), 5.0)
 
-                if voltage < 1.0:
+                if voltage == 0:
+                    pass
+                elif voltage < 1.0:
                     volume_percent = 0
                 elif voltage < 2.0:
                     volume_percent = 25
