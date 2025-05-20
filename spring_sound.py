@@ -14,37 +14,33 @@ class readnwrite(Thread):
     def __init__(self):
         Thread.__init__(self)
         self.running = True
+        self.last_audio_paths = []
 
     def run(self):
         print(f"[{time.strftime('%H:%M:%S')}] readnwrite thread started (PID: {os.getpid()})")
         path_list_path = 'sound_sprout/path_list.txt'
         try:
-            # Verify path_list.txt is writable
             if not os.access(os.path.dirname(path_list_path) or '.', os.W_OK):
                 print(f"[{time.strftime('%H:%M:%S')}] ERROR: Directory for {path_list_path} is not writable")
                 return
             while self.running:
                 try:
-                    # Read voltages and classify plant IDs
                     id_list = read_id()
                     print(f"[{time.strftime('%H:%M:%S')}] Detected IDs: {id_list}")
                     
-                    # Get audio file paths for valid IDs
-                    audio_paths = []
-                    for plant_id in id_list:
-                        if plant_id in track:
-                            audio_paths.append(track[plant_id])
-                    
-                    if audio_paths:
-                        # Write to path_list.txt
+                    audio_paths = [track[plant_id] for plant_id in id_list if plant_id in track]
+                    if audio_paths and audio_paths != self.last_audio_paths:
                         try:
                             with open(path_list_path, 'w') as f:
                                 f.write(','.join(audio_paths))
                             print(f"[{time.strftime('%H:%M:%S')}] Wrote to {path_list_path}: {','.join(audio_paths)}")
+                            self.last_audio_paths = audio_paths
                         except Exception as e:
                             print(f"[{time.strftime('%H:%M:%S')}] Failed to write to {path_list_path}: {e}")
-                    else:
+                    elif not audio_paths:
                         print(f"[{time.strftime('%H:%M:%S')}] No valid plant IDs detected")
+                    else:
+                        print(f"[{time.strftime('%H:%M:%S')}] No change in audio paths")
                     
                     time.sleep(1)
                 except Exception as e:
