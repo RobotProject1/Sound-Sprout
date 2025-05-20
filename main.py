@@ -2,7 +2,7 @@ import os
 import psutil
 import subprocess
 import sys
-from threading import Thread
+from threading import Thread, Lock
 import time
 import Jetson.GPIO as GPIO
 
