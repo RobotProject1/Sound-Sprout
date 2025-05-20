@@ -109,7 +109,7 @@ class volume(Thread):
 
                 # Reject glitches: only accept large jumps if they persist
                 if self.last_voltage is not None:
-                    if abs(voltage - self.last_voltage) > 1.0:
+                    if abs(voltage - self.last_voltage) > 2.0:
                         # Suspect glitch, skip this reading
                         time.sleep(0.1)
                         continue
