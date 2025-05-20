@@ -7,10 +7,10 @@ import time
 import Jetson.GPIO as GPIO
 
 # GPIO Pin Configuration
-ONOFF_PIN = 9  # Physical 21
+ONOFF_PIN = 7  # Physical 26
 SEASONS = {
-    'rainy': {'pin': 19, 'script': 'rainy_sound.py'},  # Physical 35
-    'spring': {'pin': 8, 'script': 'spring_sound.py'},  # Physical 24
+    'rainy': {'pin': 8, 'script': 'rainy_sound.py'},  # Physical 35
+    'spring': {'pin': 19, 'script': 'spring_sound.py'},  # Physical 24
     'winter': {'pin': 4, 'script': 'winter_sound.py'}   # Physical 7
 }
 
