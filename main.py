@@ -10,8 +10,8 @@ import Jetson.GPIO as GPIO
 ONOFF_PIN = 7  # Physical 26
 SEASONS = {
     'rainy': {'pin': 8, 'script': 'rainy_sound.py'},  # Physical 35
-    'spring': {'pin': 19, 'script': 'spring_sound.py'},  # Physical 24
-    'winter': {'pin': 4, 'script': 'winter_sound.py'}   # Physical 7
+    'spring': {'pin': 4, 'script': 'spring_sound.py'},  # Physical 24
+    'winter': {'pin': 19, 'script': 'winter_sound.py'}   # Physical 7
 }
 
 running_processes = []
@@ -62,7 +62,7 @@ class choose_season(Thread):
         self.ss_old = ''
         self.ss_new = 'spring'
         for season, config in SEASONS.items():
-            GPIO.setup(config['pin'], GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+            # GPIO.setup(config['pin'], GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
             GPIO.add_event_detect(
                 config['pin'], GPIO.RISING, callback=self.handle_button, bouncetime=200
             )
