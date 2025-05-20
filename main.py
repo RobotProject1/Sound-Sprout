@@ -104,11 +104,11 @@ if __name__ == '__main__':
     GPIO.setmode(GPIO.BCM)  
     GPIO.setup(onoff_pin, GPIO.IN)
     target_scripts = ['playsound.py','plant_classification.py','spring_sound.py','rainy_sound.py','winter_sound.py']
-    choose_season_thread = choose_season()
     while True:
         GPIO.wait_for_edge(onoff_pin, GPIO.RISING)
         print("ON button pressed. Starting system...")
         time.sleep(0.3)
+        choose_season_thread = choose_season()
         choose_season_thread.start()
         run_script('playsound.py')
         GPIO.wait_for_edge(onoff_pin, GPIO.RISING)
