@@ -24,7 +24,9 @@ def kill_python_scripts_by_name(target_names):
         for proc in running_processes[:]:
             try:
                 if proc.poll() is None:
-                    cmdline = proc.cmdline()
+                    # Convert Popen object to psutil.Process to access cmdline
+                    ps_proc = psutil.Process(proc.pid)
+                    cmdline = ps_proc.cmdline()
                     for name in target_names:
                         if any(name in part for part in cmdline[1:]):
                             print(f"[{time.strftime('%H:%M:%S')}] Terminating PID {proc.pid}: {' '.join(cmdline)}")
@@ -40,6 +42,8 @@ def kill_python_scripts_by_name(target_names):
             except (psutil.NoSuchProcess, psutil.AccessDenied) as e:
                 print(f"[{time.strftime('%H:%M:%S')}] Error accessing process {proc.pid}: {e}")
                 running_processes.remove(proc)
+            except Exception as e:
+                print(f"[{time.strftime('%H:%M:%S')}] Unexpected error in kill_python_scripts_by_name: {e}")
         print(f"[{time.strftime('%H:%M:%S')}] Running processes after kill: {[proc.pid for proc in running_processes]}")
 
 def run_script(script_name):
@@ -49,10 +53,14 @@ def run_script(script_name):
     if not os.path.exists(script_path):
         print(f"[{time.strftime('%H:%M:%S')}] ERROR: Script {script_path} not found.")
         return None
-    if not os.access(script_path, os.R_OK | os.X_OK):
-        print(f"[{time.strftime('%H:%M:%S')}] ERROR: Script {script_path} not readable or executable.")
+    if not os.access(script_path, os.R_OK):
+        print(f"[{time.strftime('%H:%M:%S')}] ERROR: Script {script_path} not readable.")
         return None
     try:
+        print(f"[{time.strftime('%H:%M:%S')}] Python executable: {sys.executable}")
+        if not os.path.exists(sys.executable):
+            print(f"[{time.strftime('%H:%M:%S')}] ERROR: Python executable {sys.executable} not found.")
+            return None
         print(f"[{time.strftime('%H:%M:%S')}] Attempting to run script: {script_path} with {sys.executable}")
         proc = subprocess.Popen([sys.executable, script_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         with process_lock:
@@ -91,8 +99,8 @@ class choose_season(Thread):
     def handle_button(self, pin):
         """Handle button press to select a season."""
         print(f"[{time.strftime('%H:%M:%S')}] Button pressed on pin {pin}")
-        for season, config in SEASONS.items():
-            try:
+        try:
+            for season, config in SEASONS.items():
                 if pin == config['pin']:
                     print(f"[{time.strftime('%H:%M:%S')}] {season.capitalize()} season selected")
                     print(f"[{time.strftime('%H:%M:%S')}] Killing season scripts before starting {config['script']}")
@@ -102,8 +110,8 @@ class choose_season(Thread):
                     break
                 else:
                     print(f"[{time.strftime('%H:%M:%S')}] No match for pin {pin} with season {season}")
-            except Exception as e:
-                print(f"[{time.strftime('%H:%M:%S')}] Error in handle_button for season {season}: {e}")
+        except Exception as e:
+            print(f"[{time.strftime('%H:%M:%S')}] Error in handle_button: {e}")
 
     def stop(self):
         """Clean up GPIO event detection."""
