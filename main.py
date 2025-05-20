@@ -39,16 +39,26 @@ def kill_python_scripts_by_name(target_names):
                 running_processes.remove(proc)
 
 def run_script(script_name):
-    """Run a Python script in a subprocess and track its process."""
+    """Run a Python script in a subprocess, track its process, and print its output."""
     script_path = os.path.join(os.path.dirname(__file__), script_name)
     if not os.path.exists(script_path):
         print(f"Script {script_path} not found.")
         return None
     try:
         print(f"Running script: {script_path}")
-        proc = subprocess.Popen([sys.executable, script_path])
+        proc = subprocess.Popen([sys.executable, script_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, bufsize=1)
         with process_lock:
             running_processes.append(proc)
+
+        def stream_output(stream, prefix):
+            while proc.poll() is None:
+                line = stream.readline().strip()
+                if line:
+                    print(f"[{prefix}] {line}")
+                time.sleep(0.01)
+
+        Thread(target=stream_output, args=(proc.stdout, script_name), daemon=True).start()
+        Thread(target=stream_output, args=(proc.stderr, f"{script_name} (stderr)"), daemon=True).start()
         return proc
     except Exception as e:
         print(f"Failed to run {script_path}: {e}")
