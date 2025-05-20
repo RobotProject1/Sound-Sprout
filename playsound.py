@@ -115,17 +115,21 @@ class volume(Thread):
 
                 if voltage < 0.2:
                     continue
-                elif voltage < 1.0:
+                elif voltage < 0.8:
                     volume_percent = 0
-                elif voltage < 2.0:
-                    volume_percent = 25
-                elif voltage < 3.0:
-                    volume_percent = 50
+                elif voltage < 1.6:
+                    volume_percent = 20
+                elif voltage < 2.4:
+                    volume_percent = 40
+                elif voltage < 3.2:
+                    volume_percent = 60
                 elif voltage < 4.0:
-                    volume_percent = 75
+                    volume_percent = 80
                 else:
                     volume_percent = 100
 
+                print(f"Voltage: {voltage:.2f} V → Volume: {volume_percent}%")
+                
                 if volume_percent != self.last_volume:
                     os.system(f"pactl set-sink-volume @DEFAULT_SINK@ {volume_percent}%")
                     self.last_volume = volume_percent
