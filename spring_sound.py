@@ -64,6 +64,7 @@ class readnwrite(Thread):
         Thread.__init__(self)
     
     def run(self):
+        print("readnwrite thread started")
         plant_id_old = []
         plant_id_new = []
         while True:
