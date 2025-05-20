@@ -4,7 +4,7 @@ import time
 GPIO.setmode(GPIO.BOARD)
 GPIO.setwarnings(False)
 GPIO.setup(7, GPIO.IN) #button 1
-GPIO.setup(24, GPIO.IN) #button 2
+GPIO.setup(23, GPIO.IN) #button 2
 GPIO.setup(35, GPIO.IN) #button 3
 GPIO.setup(26, GPIO.IN) #button 4
 
@@ -14,7 +14,7 @@ try:
             print("Button 1 is HIGH")
         else:
             print("Button 1 is LOW")
-        if GPIO.input(24) == GPIO.HIGH:
+        if GPIO.input(23) == GPIO.HIGH:
             print("Button 2 is HIGH")
         else:
             print("Button 2 is LOW")
