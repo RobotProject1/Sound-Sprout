@@ -42,16 +42,17 @@ def run_script(script_name):
     """Run a Python script in a subprocess and track its process."""
     script_path = os.path.join(os.path.dirname(__file__), script_name)
     if not os.path.exists(script_path):
-        print(f"Script {script_path} not found.")
+        print(f"ERROR: Script {script_path} not found.")
         return None
     try:
-        print(f"Running script: {script_path}")
+        print(f"[{time.strftime('%H:%M:%S')}] Attempting to run script: {script_path}")
         proc = subprocess.Popen([sys.executable, script_path])
         with process_lock:
             running_processes.append(proc)
+        print(f"[{time.strftime('%H:%M:%S')}] Successfully started {script_name} with PID {proc.pid}")
         return proc
     except Exception as e:
-        print(f"Failed to run {script_path}: {e}")
+        print(f"[{time.strftime('%H:%M:%S')}] Failed to run {script_path}: {e}")
         return None
 
 class choose_season(Thread):
@@ -59,49 +60,56 @@ class choose_season(Thread):
     def __init__(self):
         Thread.__init__(self)
         self.running = True
+        print(f"[{time.strftime('%H:%M:%S')}] Initializing choose_season thread")
         # Setup GPIO pins for each season
         for config in SEASONS.values():
             GPIO.setup(config['pin'], GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
             GPIO.add_event_detect(
                 config['pin'], GPIO.RISING, callback=self.handle_button, bouncetime=300
             )
+            print(f"[{time.strftime('%H:%M:%S')}] Set up GPIO pin {config['pin']} for {config['script']}")
 
     def handle_button(self, pin):
         """Handle button press to select a season."""
+        print(f"[{time.strftime('%H:%M:%S')}] Button pressed on pin {pin}")
         for season, config in SEASONS.items():
             if pin == config['pin']:
-                print(f"{season.capitalize()} season selected.")
+                print(f"[{time.strftime('%H:%M:%S')}] {season.capitalize()} season selected")
                 # Kill all season scripts
                 kill_python_scripts_by_name([c['script'] for c in SEASONS.values()])
                 # Run the selected season's script
                 run_script(config['script'])
                 break
+            else:
+                print(f"[{time.strftime('%H:%M:%S')}] No match for pin {pin} with season {season}")
 
     def stop(self):
         """Clean up GPIO event detection."""
         self.running = False
-        for config in SEASONS.values():  # Fixed: Use .values() instead of .items()
+        for config in SEASONS.values():
             GPIO.remove_event_detect(config['pin'])
+        print(f"[{time.strftime('%H:%M:%S')}] choose_season thread stopped")
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     GPIO.setmode(GPIO.BOARD)  # Changed to BOARD mode
     GPIO.setup(ONOFF_PIN, GPIO.IN)
     target_scripts = ['playsound.py', 'plant_classification.py', 'spring_sound.py', 'rainy_sound.py', 'winter_sound.py']
+    print(f"[{time.strftime('%H:%M:%S')}] Main script started")
     while True:
         try:
             GPIO.wait_for_edge(ONOFF_PIN, GPIO.RISING)
-            print("ON button pressed. Starting system...")
+            print(f"[{time.strftime('%H:%M:%S')}] ON button pressed. Starting system...")
             time.sleep(0.3)
             choose_season_thread = choose_season()
             choose_season_thread.start()
             run_script('playsound.py')
             GPIO.wait_for_edge(ONOFF_PIN, GPIO.RISING)
-            print("OFF button pressed. Stopping system...")
+            print(f"[{time.strftime('%H:%M:%S')}] OFF button pressed. Stopping system...")
             time.sleep(0.3)
             choose_season_thread.stop()
             kill_python_scripts_by_name(target_scripts)
             GPIO.cleanup()  # Reset GPIO pins on shutdown
         except KeyboardInterrupt:
-            print("Shutting down...")
+            print(f"[{time.strftime('%H:%M:%S')}] Shutting down...")
             GPIO.cleanup()
             break
