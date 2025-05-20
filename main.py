@@ -96,27 +96,40 @@ class choose_season(Thread):
             GPIO.remove_event_detect(config['pin'])
         print(f"[{time.strftime('%H:%M:%S')}] choose_season thread stopped")
 
+# if __name__ == "__main__":
+#     GPIO.setwarnings(False)
+#     GPIO.setmode(GPIO.BOARD)  # Changed to BOARD mode
+#     GPIO.setup(ONOFF_PIN, GPIO.IN)
+#     target_scripts = ['playsound.py', 'plant_classification.py', 'spring_sound.py', 'rainy_sound.py', 'winter_sound.py']
+#     print(f"[{time.strftime('%H:%M:%S')}] Main script started")
+#     while True:
+#         try:
+#             GPIO.wait_for_edge(ONOFF_PIN, GPIO.RISING)
+#             print(f"[{time.strftime('%H:%M:%S')}] ON button pressed. Starting system...")
+#             time.sleep(0.3)
+#             choose_season_thread = choose_season()
+#             choose_season_thread.start()
+#             run_script('playsound.py')
+#             GPIO.wait_for_edge(ONOFF_PIN, GPIO.RISING)
+#             print(f"[{time.strftime('%H:%M:%S')}] OFF button pressed. Stopping system...")
+#             time.sleep(0.3)
+#             choose_season_thread.stop()
+#             kill_python_scripts_by_name(target_scripts)
+#             GPIO.cleanup()  # Reset GPIO pins on shutdown
+#         except KeyboardInterrupt:
+#             print(f"[{time.strftime('%H:%M:%S')}] Shutting down...")
+#             GPIO.cleanup()
+#             break
+
 if __name__ == "__main__":
     GPIO.setwarnings(False)
-    GPIO.setmode(GPIO.BOARD)  # Changed to BOARD mode
-    GPIO.setup(ONOFF_PIN, GPIO.IN)
-    target_scripts = ['playsound.py', 'plant_classification.py', 'spring_sound.py', 'rainy_sound.py', 'winter_sound.py']
+    GPIO.setmode(GPIO.BOARD)
     print(f"[{time.strftime('%H:%M:%S')}] Main script started")
-    while True:
-        try:
-            GPIO.wait_for_edge(ONOFF_PIN, GPIO.RISING)
-            print(f"[{time.strftime('%H:%M:%S')}] ON button pressed. Starting system...")
-            time.sleep(0.3)
-            choose_season_thread = choose_season()
-            choose_season_thread.start()
-            run_script('playsound.py')
-            GPIO.wait_for_edge(ONOFF_PIN, GPIO.RISING)
-            print(f"[{time.strftime('%H:%M:%S')}] OFF button pressed. Stopping system...")
-            time.sleep(0.3)
-            choose_season_thread.stop()
-            kill_python_scripts_by_name(target_scripts)
-            GPIO.cleanup()  # Reset GPIO pins on shutdown
-        except KeyboardInterrupt:
-            print(f"[{time.strftime('%H:%M:%S')}] Shutting down...")
-            GPIO.cleanup()
-            break
+    try:
+        run_script('spring_sound.py')  # Run directly
+        while True:
+            time.sleep(1)
+    except KeyboardInterrupt:
+        print(f"[{time.strftime('%H:%M:%S')}] Shutting down...")
+        kill_python_scripts_by_name(['spring_sound.py'])
+        GPIO.cleanup()
