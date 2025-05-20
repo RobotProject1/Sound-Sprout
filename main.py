@@ -118,33 +118,3 @@ if __name__ == '__main__':
         ss_old = ''
         ss_new = 'spring'
         kill_python_scripts_by_name(target_scripts)
-
-# if __name__ == '__main__':
-#     onoff_pin = 7  # physical 26
-#     GPIO.setmode(GPIO.BCM)
-#     GPIO.setup(onoff_pin, GPIO.IN)
-#     target_scripts = ['playsound.py', 'plant_classification', 'spring_sound.py', 'rainy_sound.py', 'winter_sound.py']
-#     run_script('playsound.py')
-
-#     while True:
-#         GPIO.wait_for_edge(onoff_pin, GPIO.RISING)
-#         print("ON button pressed. Starting system...")
-#         time.sleep(0.3)
-
-#         choose_season_thread = choose_season()
-#         choose_season_thread.start()
-
-#         try:
-#             while GPIO.input(onoff_pin) == GPIO.LOW:
-#                 voltages = read_v()
-#                 voltage_str = ' | '.join([f"CH{i}: {v:.2f} V" for i, v in enumerate(voltages)])
-#                 print("Voltages ->", voltage_str)
-#                 time.sleep(0.5)
-#         except KeyboardInterrupt:
-#             break
-
-#         print("OFF button pressed. Stopping system...")
-#         choose_season_thread.stop()
-#         ss_old = ''
-#         ss_new = 'spring'
-#         kill_python_scripts_by_name(target_scripts)
