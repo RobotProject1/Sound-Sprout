@@ -1,5 +1,7 @@
 from plant_classification import read_id,read_v
 from threading import Thread
+import os
+import time
 
 #(1,Potato)(2,Tomato)(3,Carrot)(4,Sunflower)(5,Daisy)(6,Mushroom)(7,Shallot)(8,Clover)(9,Corn)(10,Pumpkin)(11,Cauliflower)(12,Radish)
 track = {
