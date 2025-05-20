@@ -4,9 +4,11 @@ import traceback
 from plant_classification import read_id, read_v
 from threading import Thread
 
+# Use absolute path for path_list.txt and audio files
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-PATH_LIST_FILE = os.path.join(BASE_DIR, 'path_list.txt')  # Corrected path
+PATH_LIST_FILE = os.path.join(BASE_DIR, 'sound_sprout', 'path_list.txt')
 
+# (1,Potato)(2,Tomato)(3,Carrot)(4,Sunflower)(5,Daisy)(6,Mushroom)(7,Shallot)(8,Clover)(9,Corn)(10,Pumpkin)(11,Cauliflower)(12,Radish)
 track = {
     1: os.path.join(BASE_DIR, 'sound_sprout/sound/spring/Potato.wav'),
     2: os.path.join(BASE_DIR, 'sound_sprout/sound/spring/Tomato.wav'),
@@ -61,4 +63,4 @@ class readnwrite(Thread):
 if __name__ == "__main__":
     thr1 = readnwrite()
     thr1.start()
-    thr1.join()
+    thr1.join()  # Keep main thread alive for standalone testing

@@ -9,7 +9,7 @@ from adafruit_ads1x15.analog_in import AnalogIn
 from shared_ads import ads2
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-PATH_LIST_FILE = os.path.join(BASE_DIR, 'path_list.txt')  # Corrected path
+PATH_LIST_FILE = os.path.join(BASE_DIR, 'sound_sprout', 'path_list.txt')
 
 def mix(audio_clip_paths):
     audio_arrays = []
@@ -41,8 +41,8 @@ def mix(audio_clip_paths):
     mixed_audio = np.sum(audio_arrays, axis=0)
     mixed_audio = mixed_audio.astype(np.float32)
     max_val = np.max(np.abs(mixed_audio))
-    if max_val > 0:
-        mixed_audio /= max_val
+    if max_val > 0:  # Avoid division by zero
+        mixed_audio /= max_val  # Normalize to [-1.0, 1.0]
     return mixed_audio, sample_rate, num_channels
 
 def callback(outdata, frames, time, status):
@@ -56,7 +56,7 @@ def callback(outdata, frames, time, status):
         second_part = mixed_audio[:end_index - total_frames]
         chunk = np.vstack((first_part, second_part))
     outdata[:] = chunk
-    index = (index + frames) % total_frames
+    index = (index + frames) % total_frames  # Wrap the index to loop
 
 class checkfile(Thread):
     def __init__(self, stop_event):
@@ -121,17 +121,8 @@ if __name__ == "__main__":
     sample_rate = 48000
     num_channels = 2
     index = 0
-    checkfile_thread = None
-    adjust_volume_thread = None
-    stream = None
     try:
         print(f"[{time.strftime('%H:%M:%S')}] Current working directory: {os.getcwd()}")
-        # Create path_list.txt if it doesn't exist
-        if not os.path.exists(PATH_LIST_FILE):
-            print(f"[{time.strftime('%H:%M:%S')}] Creating {PATH_LIST_FILE}")
-            os.makedirs(os.path.dirname(PATH_LIST_FILE), exist_ok=True)
-            with open(PATH_LIST_FILE, 'w') as file:
-                file.write('')
         with open(PATH_LIST_FILE, 'r') as file:
             path_list = file.read().strip()
             path_list = [p.strip() for p in path_list.split(',') if p.strip()]
@@ -149,22 +140,16 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         print(f"[{time.strftime('%H:%M:%S')}] KeyboardInterrupt received, stopping...")
         stop_event.set()
-        if checkfile_thread:
-            checkfile_thread.join()
-        if adjust_volume_thread:
-            adjust_volume_thread.join()
-        if stream:
-            stream.stop()
-            stream.close()
+        checkfile_thread.join()
+        adjust_volume_thread.join()
+        stream.stop()
+        stream.close()
         print(f"[{time.strftime('%H:%M:%S')}] Playsound shutdown complete.")
     except Exception as e:
         print(f"[{time.strftime('%H:%M:%S')}] Unexpected error: {e}")
         traceback.print_exc()
         stop_event.set()
-        if checkfile_thread:
-            checkfile_thread.join()
-        if adjust_volume_thread:
-            adjust_volume_thread.join()
-        if stream:
-            stream.stop()
-            stream.close()
+        checkfile_thread.join()
+        adjust_volume_thread.join()
+        stream.stop()
+        stream.close()
