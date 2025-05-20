@@ -62,6 +62,7 @@ class choose_season(Thread):
         self.ss_old = ''
         self.ss_new = 'spring'
         for season, config in SEASONS.items():
+            GPIO.setup(config['pin'], GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
             GPIO.add_event_detect(
                 config['pin'], GPIO.RISING, callback=self.handle_button, bouncetime=200
             )
