@@ -22,20 +22,21 @@ track = {
 class readnwrite(Thread):
     def __init__(self):
         Thread.__init__(self)
+        self.plant_id_old = []
+        self.plant_id_new = []
+        self.output_file = 'sound_sprout/path_list.txt'
     
     def run(self):
         print("readnwrite thread started")
-        plant_id_old = []
-        plant_id_new = []
         while True:
             try:
-                plant_id_new = read_id(read_v())
-                print(f"New plant IDs: {plant_id_new}")
-                if plant_id_new == plant_id_old:
+                self.plant_id_new = read_id(read_v())
+                print(f"New plant IDs: {self.plant_id_new}")
+                if self.plant_id_new == plant_id_old:
                     print("No change in plant IDs")
                 else:
                     path_list = "sound_sprout/sound/winter/AMBIENT.wav"
-                    for i in plant_id_new:
+                    for i in self.plant_id_new:
                         if i == 0:
                             print(f"Skipping ID 0")
                         else:
@@ -45,13 +46,15 @@ class readnwrite(Thread):
                                 print(f"Invalid ID {i} or file {track.get(i, 'N/A')} not found")
                     path_list = path_list.lstrip(',')
                     print(f"Writing to path_list.txt: {path_list}")
-                    with open('sound_sprout/path_list.txt', 'w') as file:
+                    with open(self.output_file, 'w') as file:
                         file.write(path_list)
-                    plant_id_old = plant_id_new.copy()
+                    plant_id_old = self.plant_id_new.copy()
             except Exception as e:
                 print(f"readnwrite error: {e}")
             time.sleep(1)
 
 if __name__ == "__main__": 
+    with open('sound_sprout/path_list.txt', 'w') as file:
+        file.write('sound_sprout/sound/winter/AMBIENT.wav')
     thr1 = readnwrite()
     thr1.start()
