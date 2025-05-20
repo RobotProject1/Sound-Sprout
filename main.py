@@ -16,6 +16,7 @@ SEASONS = {
 
 running_processes = []
 process_lock = Lock()
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 def kill_python_scripts_by_name(target_names):
     """Kill running Python scripts matching target names."""
@@ -26,32 +27,35 @@ def kill_python_scripts_by_name(target_names):
                     cmdline = proc.cmdline()
                     for name in target_names:
                         if any(name in part for part in cmdline[1:]):
-                            print(f"Terminating PID {proc.pid}: {' '.join(cmdline)}")
+                            print(f"[{time.strftime('%H:%M:%S')}] Terminating PID {proc.pid}: {' '.join(cmdline)}")
                             proc.terminate()
                             try:
                                 proc.wait(timeout=2)
                             except subprocess.TimeoutExpired:
-                                print(f"Force killing PID {proc.pid}")
+                                print(f"[{time.strftime('%H:%M:%S')}] Force killing PID {proc.pid}")
                                 proc.kill()
                             running_processes.remove(proc)
                             break
             except (psutil.NoSuchProcess, psutil.AccessDenied):
+                print(f"[{time.strftime('%H:%M:%S')}] Process {proc.pid} no longer exists or access denied")
                 running_processes.remove(proc)
 
 def run_script(script_name):
     """Run a Python script in a subprocess and track its process."""
-    script_path = os.path.join(os.path.dirname(__file__), script_name)
+    script_path = os.path.join(BASE_DIR, script_name)
     if not os.path.exists(script_path):
-        print(f"Script {script_path} not found.")
+        print(f"[{time.strftime('%H:%M:%S')}] Script {script_path} not found.")
         return None
     try:
-        print(f"Running script: {script_path}")
-        proc = subprocess.Popen([sys.executable, script_path])
+        print(f"[{time.strftime('%H:%M:%S')}] Running script: {script_path} (Main PID: {os.getpid()})")
+        # Set working directory to BASE_DIR for subprocess
+        proc = subprocess.Popen([sys.executable, script_path], cwd=BASE_DIR)
         with process_lock:
             running_processes.append(proc)
+        print(f"[{time.strftime('%H:%M:%S')}] Started process PID: {proc.pid}")
         return proc
     except Exception as e:
-        print(f"Failed to run {script_path}: {e}")
+        print(f"[{time.strftime('%H:%M:%S')}] Failed to run {script_path}: {e}")
         return None
 
 class choose_season(Thread):
@@ -70,7 +74,7 @@ class choose_season(Thread):
         for season, config in SEASONS.items():
             if pin == config['pin']:
                 self.ss_new = season
-                print(f"{season.capitalize()} season selected.")
+                print(f"[{time.strftime('%H:%M:%S')}] {season.capitalize()} season selected.")
                 if self.ss_new != self.ss_old:
                     self.ss_old = self.ss_new
                     kill_python_scripts_by_name([config['script'] for config in SEASONS.values()])
@@ -95,17 +99,17 @@ if __name__ == '__main__':
     try:
         while True:
             GPIO.wait_for_edge(ONOFF_PIN, GPIO.RISING)
-            print("ON button pressed. Starting system...")
+            print(f"[{time.strftime('%H:%M:%S')}] ON button pressed. Starting system...")
             time.sleep(0.3)
             choose_season_thread = choose_season()
             choose_season_thread.start()
             run_script('playsound.py')
             GPIO.wait_for_edge(ONOFF_PIN, GPIO.RISING)
-            print("OFF button pressed. Stopping system...")
+            print(f"[{time.strftime('%H:%M:%S')}] OFF button pressed. Stopping system...")
             time.sleep(0.3)
             choose_season_thread.stop()
             choose_season_thread.join()
             kill_python_scripts_by_name(target_scripts)
     finally:
         GPIO.cleanup()
-        print("GPIO resources cleaned up.")
+        print(f"[{time.strftime('%H:%M:%S')}] GPIO resources cleaned up.")
