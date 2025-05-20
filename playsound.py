@@ -102,13 +102,13 @@ class volume(Thread):
                 voltage = self.read_avg_voltage()
                 voltage = min(max(voltage, 0), 5.0)
                 volume_percent = int((voltage / 5.0) * 120)
-                print(f"Voltage: {voltage:.2f} V → Volume: {volume_percent}%")
                 if volume_percent != self.last_volume:
                     os.system(f"pactl set-sink-volume @DEFAULT_SINK@ {volume_percent}%")
                     self.last_volume = volume_percent
+                time.sleep(0.2)
             except Exception as e:
                 print(f"Volume control error: {e}")
-            time.sleep(0.2)
+                time.sleep(0.2)
 
 if __name__ == "__main__":
     stop_event = Event()  # Event to signal threads to stop
