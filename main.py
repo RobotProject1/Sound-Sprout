@@ -6,12 +6,12 @@ from threading import Thread, Lock
 import time
 import Jetson.GPIO as GPIO
 
-# GPIO Pin Configuration
-ONOFF_PIN = 7  # Physical 26
+# GPIO Pin Configuration (using BOARD mode, physical pin numbers)
+ONOFF_PIN = 26  # Physical 26 (was BCM 7)
 SEASONS = {
-    'rainy': {'pin': 8, 'script': 'rainy_sound.py'},  # Physical 35
-    'spring': {'pin': 4, 'script': 'spring_sound.py'},  # Physical 24
-    'winter': {'pin': 19, 'script': 'winter_sound.py'}   # Physical 7
+    'rainy': {'pin': 35, 'script': 'rainy_sound.py'},  # Physical 35 (was BCM 8)
+    'spring': {'pin': 7, 'script': 'spring_sound.py'},  # Physical 7 (was BCM 4)
+    'winter': {'pin': 24, 'script': 'winter_sound.py'}  # Physical 24 (was BCM 19)
 }
 
 running_processes = []
@@ -80,23 +80,28 @@ class choose_season(Thread):
     def stop(self):
         """Clean up GPIO event detection."""
         self.running = False
-        for config in SEASONS.items():
+        for config in SEASONS.values():  # Fixed: Use .values() instead of .items()
             GPIO.remove_event_detect(config['pin'])
 
 if __name__ == '__main__':
-    GPIO.setmode(GPIO.BCM)
+    GPIO.setmode(GPIO.BOARD)  # Changed to BOARD mode
     GPIO.setup(ONOFF_PIN, GPIO.IN)
     target_scripts = ['playsound.py', 'plant_classification.py', 'spring_sound.py', 'rainy_sound.py', 'winter_sound.py']
     while True:
-        GPIO.wait_for_edge(ONOFF_PIN, GPIO.RISING)
-        print("ON button pressed. Starting system...")
-        time.sleep(0.3)
-        choose_season_thread = choose_season()
-        choose_season_thread.start()
-        run_script('playsound.py')
-        GPIO.wait_for_edge(ONOFF_PIN, GPIO.RISING)
-        print("OFF button pressed. Stopping system...")
-        time.sleep(0.3)
-        choose_season_thread.stop()
-        kill_python_scripts_by_name(target_scripts)
-        GPIO.cleanup()  # Reset GPIO pins on shutdown
+        try:
+            GPIO.wait_for_edge(ONOFF_PIN, GPIO.RISING)
+            print("ON button pressed. Starting system...")
+            time.sleep(0.3)
+            choose_season_thread = choose_season()
+            choose_season_thread.start()
+            run_script('playsound.py')
+            GPIO.wait_for_edge(ONOFF_PIN, GPIO.RISING)
+            print("OFF button pressed. Stopping system...")
+            time.sleep(0.3)
+            choose_season_thread.stop()
+            kill_python_scripts_by_name(target_scripts)
+            GPIO.cleanup()  # Reset GPIO pins on shutdown
+        except KeyboardInterrupt:
+            print("Shutting down...")
+            GPIO.cleanup()
+            break
