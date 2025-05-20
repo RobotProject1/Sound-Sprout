@@ -1,5 +1,7 @@
 from plant_classification import read_id,read_v
 from threading import Thread
+import os
+import time
 
 #(1,Potato)(2,Tomato)(3,Carrot)(4,Sunflower)(5,Daisy)(6,Mushroom)(7,Shallot)(8,Clover)(9,Corn)(10,Pumpkin)(11,Cauliflower)(12,Radish)
 track = {
@@ -20,23 +22,35 @@ track = {
 class readnwrite(Thread):
     def __init__(self):
         Thread.__init__(self)
+    
     def run(self):
+        print("readnwrite thread started")
         plant_id_old = []
         plant_id_new = []
         while True:
-            plant_id_new = read_id(read_v())
-            if plant_id_new == plant_id_old:
-                pass
-            else:
-                with open('sound_sprout/path_list.txt', 'w') as file:
-                    path_list = 'sound_sprout/sound/winter/AMBIENT.wav'
+            try:
+                plant_id_new = read_id(read_v())
+                print(f"New plant IDs: {plant_id_new}")
+                if plant_id_new == plant_id_old:
+                    print("No change in plant IDs")
+                else:
+                    path_list = "sound_sprout/sound/winter/AMBIENT.wav"
                     for i in plant_id_new:
                         if i == 0:
-                            pass
+                            print(f"Skipping ID 0")
                         else:
-                            path_list += ','+track[i]
-                    file.write(path_list)
-            plant_id_old = plant_id_new.copy()
+                            if i in track and os.path.exists(track[i]):
+                                path_list += ',' + track[i]
+                            else:
+                                print(f"Invalid ID {i} or file {track.get(i, 'N/A')} not found")
+                    path_list = path_list.lstrip(',')
+                    print(f"Writing to path_list.txt: {path_list}")
+                    with open('sound_sprout/path_list.txt', 'w') as file:
+                        file.write(path_list)
+                    plant_id_old = plant_id_new.copy()
+            except Exception as e:
+                print(f"readnwrite error: {e}")
+            time.sleep(1)
 
 if __name__ == "__main__": 
     thr1 = readnwrite()
