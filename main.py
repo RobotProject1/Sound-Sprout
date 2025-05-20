@@ -42,14 +42,20 @@ def run_script(script_name):
     """Run a Python script in a subprocess and track its process."""
     script_path = os.path.join(os.path.dirname(__file__), script_name)
     if not os.path.exists(script_path):
-        print(f"ERROR: Script {script_path} not found.")
+        print(f"[{time.strftime('%H:%M:%S')}] ERROR: Script {script_path} not found.")
         return None
     try:
         print(f"[{time.strftime('%H:%M:%S')}] Attempting to run script: {script_path}")
-        proc = subprocess.Popen([sys.executable, script_path])
+        proc = subprocess.Popen([sys.executable, script_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         with process_lock:
             running_processes.append(proc)
         print(f"[{time.strftime('%H:%M:%S')}] Successfully started {script_name} with PID {proc.pid}")
+        # Monitor initial output to catch immediate errors
+        stdout, stderr = proc.communicate(timeout=5)
+        if stdout:
+            print(f"[{time.strftime('%H:%M:%S')}] {script_name} stdout: {stdout}")
+        if stderr:
+            print(f"[{time.strftime('%H:%M:%S')}] {script_name} stderr: {stderr}")
         return proc
     except Exception as e:
         print(f"[{time.strftime('%H:%M:%S')}] Failed to run {script_path}: {e}")
@@ -91,6 +97,7 @@ class choose_season(Thread):
         print(f"[{time.strftime('%H:%M:%S')}] choose_season thread stopped")
 
 if __name__ == "__main__":
+    GPIO.setwarnings(False)
     GPIO.setmode(GPIO.BOARD)  # Changed to BOARD mode
     GPIO.setup(ONOFF_PIN, GPIO.IN)
     target_scripts = ['playsound.py', 'plant_classification.py', 'spring_sound.py', 'rainy_sound.py', 'winter_sound.py']
