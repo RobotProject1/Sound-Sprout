@@ -80,12 +80,13 @@ class choose_season(Thread):
             print(f"[{time.strftime('%H:%M:%S')}] Set up GPIO pin {config['pin']} for {config['script']}")
 
     def handle_button(self, pin):
-        """Handle button press to select a season."""
         print(f"[{time.strftime('%H:%M:%S')}] Button pressed on pin {pin}")
         for season, config in SEASONS.items():
             if pin == config['pin']:
                 print(f"[{time.strftime('%H:%M:%S')}] {season.capitalize()} season selected")
+                print(f"[{time.strftime('%H:%M:%S')}] Killing season scripts before starting {config['script']}")
                 kill_python_scripts_by_name([c['script'] for c in SEASONS.values()])
+                print(f"[{time.strftime('%H:%M:%S')}] Starting {config['script']}")
                 run_script(config['script'])
                 break
             else:
@@ -122,15 +123,15 @@ if __name__ == "__main__":
         kill_python_scripts_by_name(target_scripts)
         GPIO.cleanup()
 
-if __name__ == "__main__":
-    GPIO.setwarnings(False)
-    GPIO.setmode(GPIO.BOARD)
-    print(f"[{time.strftime('%H:%M:%S')}] Main script started")
-    try:
-        run_script('spring_sound.py')  # Run directly
-        while True:
-            time.sleep(1)
-    except KeyboardInterrupt:
-        print(f"[{time.strftime('%H:%M:%S')}] Shutting down...")
-        kill_python_scripts_by_name(['spring_sound.py'])
-        GPIO.cleanup()
+# if __name__ == "__main__":
+#     GPIO.setwarnings(False)
+#     GPIO.setmode(GPIO.BOARD)
+#     print(f"[{time.strftime('%H:%M:%S')}] Main script started")
+#     try:
+#         run_script('spring_sound.py')  # Run directly
+#         while True:
+#             time.sleep(1)
+#     except KeyboardInterrupt:
+#         print(f"[{time.strftime('%H:%M:%S')}] Shutting down...")
+#         kill_python_scripts_by_name(['spring_sound.py'])
+#         GPIO.cleanup()
