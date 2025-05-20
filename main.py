@@ -7,23 +7,24 @@ import time
 import Jetson.GPIO as GPIO
 
 # GPIO Pin Configuration (using BOARD mode, physical pin numbers)
-ONOFF_PIN = 26
+ONOFF_PIN = 26  # Physical 26
 SEASONS = {
-    'rainy': {'pin': 35, 'script': 'rainy_sound.py'},
-    'spring': {'pin': 7, 'script': 'spring_sound.py'},
-    'winter': {'pin': 23, 'script': 'winter_sound.py'}
+    'rainy': {'pin': 35, 'script': 'rainy_sound.py'},  # Physical 35
+    'spring': {'pin': 7, 'script': 'spring_sound.py'},  # Physical 7
+    'winter': {'pin': 23, 'script': 'winter_sound.py'}  # Physical 23
 }
 
 running_processes = []
 process_lock = Lock()
-current_season = None
 
 def kill_python_scripts_by_name(target_names):
+    """Kill running Python scripts matching target names."""
     with process_lock:
         print(f"[{time.strftime('%H:%M:%S')}] Running processes before kill: {[proc.pid for proc in running_processes]}")
         for proc in running_processes[:]:
             try:
                 if proc.poll() is None:
+                    # Convert Popen object to psutil.Process to access cmdline
                     ps_proc = psutil.Process(proc.pid)
                     cmdline = ps_proc.cmdline()
                     for name in target_names:
@@ -46,6 +47,7 @@ def kill_python_scripts_by_name(target_names):
         print(f"[{time.strftime('%H:%M:%S')}] Running processes after kill: {[proc.pid for proc in running_processes]}")
 
 def run_script(script_name):
+    """Run a Python script in a subprocess and track its process."""
     script_path = os.path.join(os.path.dirname(__file__), script_name)
     print(f"[{time.strftime('%H:%M:%S')}] Checking script path: {script_path}")
     if not os.path.exists(script_path):
@@ -64,6 +66,7 @@ def run_script(script_name):
         with process_lock:
             running_processes.append(proc)
         print(f"[{time.strftime('%H:%M:%S')}] Successfully started {script_name} with PID {proc.pid}")
+        # Check initial output to catch immediate errors
         try:
             stdout, stderr = proc.communicate(timeout=5)
             if stdout:
@@ -78,6 +81,7 @@ def run_script(script_name):
         return None
 
 class choose_season(Thread):
+    """Thread to handle season selection based on GPIO button presses."""
     def __init__(self):
         Thread.__init__(self)
         self.running = True
@@ -93,20 +97,16 @@ class choose_season(Thread):
                 print(f"[{time.strftime('%H:%M:%S')}] Failed to set up GPIO pin {config['pin']}: {e}")
 
     def handle_button(self, pin):
-        global current_season
+        """Handle button press to select a season."""
         print(f"[{time.strftime('%H:%M:%S')}] Button pressed on pin {pin}")
         try:
             for season, config in SEASONS.items():
                 if pin == config['pin']:
-                    if current_season == season:
-                        print(f"[{time.strftime('%H:%M:%S')}] {season.capitalize()} already running, skipping")
-                        break
                     print(f"[{time.strftime('%H:%M:%S')}] {season.capitalize()} season selected")
                     print(f"[{time.strftime('%H:%M:%S')}] Killing season scripts before starting {config['script']}")
                     kill_python_scripts_by_name([c['script'] for c in SEASONS.values()])
                     print(f"[{time.strftime('%H:%M:%S')}] Starting {config['script']}")
                     run_script(config['script'])
-                    current_season = season
                     break
                 else:
                     print(f"[{time.strftime('%H:%M:%S')}] No match for pin {pin} with season {season}")
@@ -114,6 +114,7 @@ class choose_season(Thread):
             print(f"[{time.strftime('%H:%M:%S')}] Error in handle_button: {e}")
 
     def stop(self):
+        """Clean up GPIO event detection."""
         self.running = False
         for config in SEASONS.values():
             try:
@@ -124,7 +125,7 @@ class choose_season(Thread):
         print(f"[{time.strftime('%H:%M:%S')}] choose_season thread stopped")
 
 if __name__ == "__main__":
-    GPIO.setwarnings(False)
+    GPIO.setwarnings(False)  # Disable GPIO warnings
     GPIO.setmode(GPIO.BOARD)
     GPIO.setup(ONOFF_PIN, GPIO.IN)
     target_scripts = ['playsound.py', 'plant_classification.py', 'spring_sound.py', 'rainy_sound.py', 'winter_sound.py']
