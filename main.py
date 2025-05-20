@@ -5,11 +5,6 @@ import sys
 from threading import Thread, Lock
 import time
 import Jetson.GPIO as GPIO
-import logging
-
-# Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)
 
 # GPIO Pin Configuration
 ONOFF_PIN = 9  # Physical 21
@@ -31,12 +26,12 @@ def kill_python_scripts_by_name(target_names):
                     cmdline = proc.cmdline()
                     for name in target_names:
                         if any(name in part for part in cmdline[1:]):
-                            logger.info(f"Terminating PID {proc.pid}: {' '.join(cmdline)}")
+                            print(f"Terminating PID {proc.pid}: {' '.join(cmdline)}")
                             proc.terminate()
                             try:
                                 proc.wait(timeout=2)
                             except subprocess.TimeoutExpired:
-                                logger.warning(f"Force killing PID {proc.pid}")
+                                print(f"Force killing PID {proc.pid}")
                                 proc.kill()
                             running_processes.remove(proc)
                             break
@@ -47,16 +42,16 @@ def run_script(script_name):
     """Run a Python script in a subprocess and track its process."""
     script_path = os.path.join(os.path.dirname(__file__), script_name)
     if not os.path.exists(script_path):
-        logger.error(f"Script {script_path} not found.")
+        print(f"Script {script_path} not found.")
         return None
     try:
-        logger.info(f"Running script: {script_path}")
+        print(f"Running script: {script_path}")
         proc = subprocess.Popen([sys.executable, script_path])
         with process_lock:
             running_processes.append(proc)
         return proc
     except Exception as e:
-        logger.error(f"Failed to run {script_path}: {e}")
+        print(f"Failed to run {script_path}: {e}")
         return None
 
 class choose_season(Thread):
@@ -75,7 +70,7 @@ class choose_season(Thread):
         for season, config in SEASONS.items():
             if pin == config['pin']:
                 self.ss_new = season
-                logger.info(f"{season.capitalize()} season selected.")
+                print(f"{season.capitalize()} season selected.")
                 if self.ss_new != self.ss_old:
                     self.ss_old = self.ss_new
                     kill_python_scripts_by_name([config['script'] for config in SEASONS.values()])
@@ -100,17 +95,17 @@ if __name__ == '__main__':
     try:
         while True:
             GPIO.wait_for_edge(ONOFF_PIN, GPIO.RISING)
-            logger.info("ON button pressed. Starting system...")
+            print("ON button pressed. Starting system...")
             time.sleep(0.3)
             choose_season_thread = choose_season()
             choose_season_thread.start()
             run_script('playsound.py')
             GPIO.wait_for_edge(ONOFF_PIN, GPIO.RISING)
-            logger.info("OFF button pressed. Stopping system...")
+            print("OFF button pressed. Stopping system...")
             time.sleep(0.3)
             choose_season_thread.stop()
             choose_season_thread.join()
             kill_python_scripts_by_name(target_scripts)
     finally:
         GPIO.cleanup()
-        logger.info("GPIO resources cleaned up.")
+        print("GPIO resources cleaned up.")
