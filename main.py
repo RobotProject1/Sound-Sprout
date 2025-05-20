@@ -5,21 +5,19 @@ import sys
 from threading import Thread
 import time
 # from plant_classification import read_v
-
-try:
-    import Jetson.GPIO as GPIO
-except (RuntimeError, ModuleNotFoundError):
-    class MockGPIO:
-        BCM = BOARD = IN = OUT = HIGH = LOW = None
-        def setmode(self, mode): pass
-        def setup(self, pin, mode): pass
-        def output(self, pin, state): pass
-        def input(self, pin): return False
-        def cleanup(self): pass
-        def wait_for_edge(self, pin, edge_type):
-            print(f"Simulating waiting for {edge_type} edge on pin {pin}")
-            return True
-    GPIO = MockGPIO()
+import Jetson.GPIO as GPIO
+# except (RuntimeError, ModuleNotFoundError):
+#     class MockGPIO:
+#         BCM = BOARD = IN = OUT = HIGH = LOW = None
+#         def setmode(self, mode): pass
+#         def setup(self, pin, mode): pass
+#         def output(self, pin, state): pass
+#         def input(self, pin): return False
+#         def cleanup(self): pass
+#         def wait_for_edge(self, pin, edge_type):
+#             print(f"Simulating waiting for {edge_type} edge on pin {pin}")
+#             return True
+#     GPIO = MockGPIO()
 
 def kill_python_scripts_by_name(target_names): # ex ['lighting_rainy.py', 'lighting_summer.py']
     """
@@ -84,6 +82,7 @@ class choose_season(Thread):
                     ss_new = 'winter'
                     print("Winter season selected.")
                     break
+                time.sleep(0.1)
             
             if ss_new == ss_old:
                 pass
@@ -96,13 +95,15 @@ class choose_season(Thread):
                     run_script('spring_sound.py')
                 elif ss_new == 'winter':
                     run_script('winter_sound.py')
+                else:
+                    pass
                 ss_new = ''
 
 if __name__ == '__main__':
     onoff_pin = 7 #physical 26
     GPIO.setmode(GPIO.BCM)  
     GPIO.setup(onoff_pin, GPIO.IN)
-    target_scripts = ['playsound.py','plant_classification','spring_sound.py','rainy_sound.py','winter_sound.py']
+    target_scripts = ['playsound.py','plant_classification.py','spring_sound.py','rainy_sound.py','winter_sound.py']
     while True:
         GPIO.wait_for_edge(onoff_pin, GPIO.RISING)
         print("ON button pressed. Starting system...")
