@@ -31,23 +31,29 @@ def kill_python_scripts_by_name(target_names):
                             proc.terminate()
                             try:
                                 proc.wait(timeout=2)
+                                print(f"[{time.strftime('%H:%M:%S')}] PID {proc.pid} terminated successfully")
                             except subprocess.TimeoutExpired:
                                 print(f"[{time.strftime('%H:%M:%S')}] Force killing PID {proc.pid}")
                                 proc.kill()
                             running_processes.remove(proc)
                             break
-            except (psutil.NoSuchProcess, psutil.AccessDenied):
+            except (psutil.NoSuchProcess, psutil.AccessDenied) as e:
+                print(f"[{time.strftime('%H:%M:%S')}] Error accessing process {proc.pid}: {e}")
                 running_processes.remove(proc)
         print(f"[{time.strftime('%H:%M:%S')}] Running processes after kill: {[proc.pid for proc in running_processes]}")
 
 def run_script(script_name):
     """Run a Python script in a subprocess and track its process."""
     script_path = os.path.join(os.path.dirname(__file__), script_name)
+    print(f"[{time.strftime('%H:%M:%S')}] Checking script path: {script_path}")
     if not os.path.exists(script_path):
         print(f"[{time.strftime('%H:%M:%S')}] ERROR: Script {script_path} not found.")
         return None
+    if not os.access(script_path, os.R_OK | os.X_OK):
+        print(f"[{time.strftime('%H:%M:%S')}] ERROR: Script {script_path} not readable or executable.")
+        return None
     try:
-        print(f"[{time.strftime('%H:%M:%S')}] Attempting to run script: {script_path}")
+        print(f"[{time.strftime('%H:%M:%S')}] Attempting to run script: {script_path} with {sys.executable}")
         proc = subprocess.Popen([sys.executable, script_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         with process_lock:
             running_processes.append(proc)
@@ -73,30 +79,41 @@ class choose_season(Thread):
         self.running = True
         print(f"[{time.strftime('%H:%M:%S')}] Initializing choose_season thread")
         for config in SEASONS.values():
-            GPIO.setup(config['pin'], GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
-            GPIO.add_event_detect(
-                config['pin'], GPIO.RISING, callback=self.handle_button, bouncetime=300
-            )
-            print(f"[{time.strftime('%H:%M:%S')}] Set up GPIO pin {config['pin']} for {config['script']}")
+            try:
+                GPIO.setup(config['pin'], GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+                GPIO.add_event_detect(
+                    config['pin'], GPIO.RISING, callback=self.handle_button, bouncetime=300
+                )
+                print(f"[{time.strftime('%H:%M:%S')}] Set up GPIO pin {config['pin']} for {config['script']}")
+            except Exception as e:
+                print(f"[{time.strftime('%H:%M:%S')}] Failed to set up GPIO pin {config['pin']}: {e}")
 
     def handle_button(self, pin):
+        """Handle button press to select a season."""
         print(f"[{time.strftime('%H:%M:%S')}] Button pressed on pin {pin}")
         for season, config in SEASONS.items():
-            if pin == config['pin']:
-                print(f"[{time.strftime('%H:%M:%S')}] {season.capitalize()} season selected")
-                print(f"[{time.strftime('%H:%M:%S')}] Killing season scripts before starting {config['script']}")
-                kill_python_scripts_by_name([c['script'] for c in SEASONS.values()])
-                print(f"[{time.strftime('%H:%M:%S')}] Starting {config['script']}")
-                run_script(config['script'])
-                break
-            else:
-                print(f"[{time.strftime('%H:%M:%S')}] No match for pin {pin} with season {season}")
+            try:
+                if pin == config['pin']:
+                    print(f"[{time.strftime('%H:%M:%S')}] {season.capitalize()} season selected")
+                    print(f"[{time.strftime('%H:%M:%S')}] Killing season scripts before starting {config['script']}")
+                    kill_python_scripts_by_name([c['script'] for c in SEASONS.values()])
+                    print(f"[{time.strftime('%H:%M:%S')}] Starting {config['script']}")
+                    run_script(config['script'])
+                    break
+                else:
+                    print(f"[{time.strftime('%H:%M:%S')}] No match for pin {pin} with season {season}")
+            except Exception as e:
+                print(f"[{time.strftime('%H:%M:%S')}] Error in handle_button for season {season}: {e}")
 
     def stop(self):
         """Clean up GPIO event detection."""
         self.running = False
         for config in SEASONS.values():
-            GPIO.remove_event_detect(config['pin'])
+            try:
+                GPIO.remove_event_detect(config['pin'])
+                print(f"[{time.strftime('%H:%M:%S')}] Removed event detection for pin {config['pin']}")
+            except Exception as e:
+                print(f"[{time.strftime('%H:%M:%S')}] Error removing event detection for pin {config['pin']}: {e}")
         print(f"[{time.strftime('%H:%M:%S')}] choose_season thread stopped")
 
 if __name__ == "__main__":
@@ -122,16 +139,3 @@ if __name__ == "__main__":
         print(f"[{time.strftime('%H:%M:%S')}] Shutting down...")
         kill_python_scripts_by_name(target_scripts)
         GPIO.cleanup()
-
-# if __name__ == "__main__":
-#     GPIO.setwarnings(False)
-#     GPIO.setmode(GPIO.BOARD)
-#     print(f"[{time.strftime('%H:%M:%S')}] Main script started")
-#     try:
-#         run_script('spring_sound.py')  # Run directly
-#         while True:
-#             time.sleep(1)
-#     except KeyboardInterrupt:
-#         print(f"[{time.strftime('%H:%M:%S')}] Shutting down...")
-#         kill_python_scripts_by_name(['spring_sound.py'])
-#         GPIO.cleanup()
