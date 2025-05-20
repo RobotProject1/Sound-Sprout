@@ -132,7 +132,7 @@ class volume(Thread):
     def __init__(self):
         Thread.__init__(self)
         self.last_volume = None  # Track last set volume to avoid redundant commands
-    def read_avg_voltage(self, channel=3, samples=15, delay=0.01):
+    def read_avg_voltage(self, channel=3, samples=10, delay=0.01):
         values = []
         for _ in range(samples):
             values.append(AnalogIn(ads2, channel).voltage)
