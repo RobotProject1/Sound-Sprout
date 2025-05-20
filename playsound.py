@@ -110,20 +110,22 @@ class volume(Thread):
                 voltage = self.read_avg_voltage()
                 voltage = min(max(voltage, 0), 5.0)
 
-                if voltage < 0.2:
-                    continue
-                elif voltage < 0.8:
-                    volume_percent = 0
-                elif voltage < 1.6:
-                    volume_percent = 20
-                elif voltage < 2.4:
-                    volume_percent = 40
-                elif voltage < 3.2:
-                    volume_percent = 60
-                elif voltage < 4.0:
-                    volume_percent = 80
-                else:
-                    volume_percent = 100
+                # if voltage < 0.2:
+                #     continue
+                # elif voltage < 0.8:
+                #     volume_percent = 0
+                # elif voltage < 1.6:
+                #     volume_percent = 20
+                # elif voltage < 2.4:
+                #     volume_percent = 40
+                # elif voltage < 3.2:
+                #     volume_percent = 60
+                # elif voltage < 4.0:
+                #     volume_percent = 80
+                # else:
+                #     volume_percent = 100
+
+                volume_percent = int((voltage / 5.0) * 100)
 
                 print(f"Voltage: {voltage:.2f} V → Volume: {volume_percent}%")
 
