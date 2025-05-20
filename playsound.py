@@ -3,13 +3,9 @@ import numpy as np
 import sounddevice as sd
 import os
 import time
-import traceback
 from threading import Thread, Event
 from adafruit_ads1x15.analog_in import AnalogIn
 from shared_ads import ads2
-
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-PATH_LIST_FILE = os.path.join(BASE_DIR, 'sound_sprout', 'path_list.txt')
 
 def mix(audio_clip_paths):
     audio_arrays = []
@@ -63,29 +59,26 @@ class checkfile(Thread):
         Thread.__init__(self)
         self.stop_event = stop_event
         self.last_mtime = 0
-        self.path_list_file = PATH_LIST_FILE
-        print(f"[{time.strftime('%H:%M:%S')}] checkfile thread started, monitoring {self.path_list_file}")
 
     def run(self):
         global mixed_audio, sample_rate, num_channels
         while not self.stop_event.is_set():
             try:
-                mtime = os.path.getmtime(self.path_list_file)
+                mtime = os.path.getmtime('sound_sprout/path_list.txt')
                 if mtime == self.last_mtime:
-                    time.sleep(0.1)
+                    time.sleep(0.1)  # Reduce CPU usage
                     continue
-                with open(self.path_list_file, 'r') as file:
+                with open('sound_sprout/path_list.txt', 'r') as file:
                     path_list = file.read()
                     path_list = path_list.split(',')
                 audio_clip_paths = [i.strip() for i in path_list if i.strip()]
-                print(f"[{time.strftime('%H:%M:%S')}] New path list: {audio_clip_paths}")
+                print(f"New path list: {audio_clip_paths}")
                 mixed_audio, sample_rate, num_channels = mix(audio_clip_paths)
-                print(f"[{time.strftime('%H:%M:%S')}] Mixed audio shape: {mixed_audio.shape}, sample rate: {sample_rate}, channels: {num_channels}")
+                print(f"Mixed audio shape: {mixed_audio.shape}, sample rate: {sample_rate}, channels: {num_channels}")
                 self.last_mtime = mtime
             except Exception as e:
-                print(f"[{time.strftime('%H:%M:%S')}] checkfile error: {e}")
-                traceback.print_exc()
-            time.sleep(0.1)
+                print(f"checkfile error: {e}")
+            time.sleep(0.1)  # Avoid busy looping
 
 class volume(Thread):
     def __init__(self, stop_event):
@@ -106,48 +99,54 @@ class volume(Thread):
                 voltage = self.read_avg_voltage()
                 voltage = min(max(voltage, 0), 5.0)
                 volume_percent = int((voltage / 5.0) * 120)
-                print(f"[{time.strftime('%H:%M:%S')}] Voltage: {voltage:.2f} V → Volume: {volume_percent}%")
+                print(f"Voltage: {voltage:.2f} V → Volume: {volume_percent}%")
                 if volume_percent != self.last_volume:
                     os.system(f"pactl set-sink-volume @DEFAULT_SINK@ {volume_percent}%")
                     self.last_volume = volume_percent
             except Exception as e:
-                print(f"[{time.strftime('%H:%M:%S')}] Volume control error: {e}")
-                traceback.print_exc()
+                print(f"Volume control error: {e}")
             time.sleep(0.2)
 
 if __name__ == "__main__":
-    stop_event = Event()
-    mixed_audio = np.zeros((542118, 2))
+    stop_event = Event()  # Event to signal threads to stop
+    mixed_audio = np.zeros((542118, 2))  # Initialize with default
     sample_rate = 48000
     num_channels = 2
     index = 0
+
     try:
-        print(f"[{time.strftime('%H:%M:%S')}] Current working directory: {os.getcwd()}")
-        with open(PATH_LIST_FILE, 'r') as file:
+        # Read initial path list
+        with open('sound_sprout/path_list.txt', 'r') as file:
             path_list = file.read().strip()
             path_list = [p.strip() for p in path_list.split(',') if p.strip()]
-        print(f"[{time.strftime('%H:%M:%S')}] Initial path list: {path_list}")
+        print(f"Initial path list: {path_list}")
         audio_clip_paths = [i.strip() for i in path_list if i.strip()]
         mixed_audio, sample_rate, num_channels = mix(audio_clip_paths)
+
+        # Start audio stream
         stream = sd.OutputStream(samplerate=sample_rate, channels=num_channels, callback=callback, blocksize=8192)
         stream.start()
+
+        # Start threads
         checkfile_thread = checkfile(stop_event)
         adjust_volume_thread = volume(stop_event)
         checkfile_thread.start()
         adjust_volume_thread.start()
-        print(f"[{time.strftime('%H:%M:%S')}] Playsound good to go!")
-        stop_event.wait()
+        print("Playsound good to go!")
+
+        # Keep main thread alive
+        stop_event.wait()  # Wait indefinitely until interrupted
+
     except KeyboardInterrupt:
-        print(f"[{time.strftime('%H:%M:%S')}] KeyboardInterrupt received, stopping...")
-        stop_event.set()
-        checkfile_thread.join()
+        print("KeyboardInterrupt received, stopping...")
+        stop_event.set()  # Signal threads to stop
+        checkfile_thread.join()  # Wait for threads to exit
         adjust_volume_thread.join()
-        stream.stop()
-        stream.close()
-        print(f"[{time.strftime('%H:%M:%S')}] Playsound shutdown complete.")
+        stream.stop()  # Stop the audio stream
+        stream.close()  # Close the audio stream
+        print("Playsound shutdown complete.")
     except Exception as e:
-        print(f"[{time.strftime('%H:%M:%S')}] Unexpected error: {e}")
-        traceback.print_exc()
+        print(f"Unexpected error: {e}")
         stop_event.set()
         checkfile_thread.join()
         adjust_volume_thread.join()
