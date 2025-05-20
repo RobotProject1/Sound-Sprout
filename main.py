@@ -6,12 +6,11 @@ from threading import Thread, Lock
 import time
 import Jetson.GPIO as GPIO
 
-# GPIO Pin Configuration
-ONOFF_PIN = 9  # Physical 21
+ONOFF_PIN = 9
 SEASONS = {
-    'rainy': {'pin': 19, 'script': 'rainy_sound.py'},  # Physical 35
-    'spring': {'pin': 8, 'script': 'spring_sound.py'},  # Physical 24
-    'winter': {'pin': 4, 'script': 'winter_sound.py'}   # Physical 7
+    'rainy': {'pin': 19, 'script': 'rainy_sound.py'},
+    'spring': {'pin': 8, 'script': 'spring_sound.py'},
+    'winter': {'pin': 4, 'script': 'winter_sound.py'}
 }
 
 running_processes = []
@@ -19,7 +18,6 @@ process_lock = Lock()
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 def kill_python_scripts_by_name(target_names):
-    """Kill running Python scripts matching target names."""
     with process_lock:
         for proc in running_processes[:]:
             try:
@@ -41,25 +39,32 @@ def kill_python_scripts_by_name(target_names):
                 running_processes.remove(proc)
 
 def run_script(script_name):
-    """Run a Python script in a subprocess and track its process."""
     script_path = os.path.join(BASE_DIR, script_name)
     if not os.path.exists(script_path):
         print(f"[{time.strftime('%H:%M:%S')}] Script {script_path} not found.")
         return None
     try:
         print(f"[{time.strftime('%H:%M:%S')}] Running script: {script_path} (Main PID: {os.getpid()})")
-        # Set working directory to BASE_DIR for subprocess
-        proc = subprocess.Popen([sys.executable, script_path], cwd=BASE_DIR)
+        proc = subprocess.Popen([sys.executable, script_path], cwd=BASE_DIR,
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         with process_lock:
             running_processes.append(proc)
         print(f"[{time.strftime('%H:%M:%S')}] Started process PID: {proc.pid}")
+        def stream_output(proc):
+            while proc.poll() is None:
+                line = proc.stdout.readline()
+                if line:
+                    print(f"[{time.strftime('%H:%M:%S')}] [{proc.pid}] {line.strip()}")
+                err = proc.stderr.readline()
+                if err:
+                    print(f"[{time.strftime('%H:%M:%S')}] [{proc.pid}] ERROR: {err.strip()}")
+        Thread(target=stream_output, args=(proc,), daemon=True).start()
         return proc
     except Exception as e:
         print(f"[{time.strftime('%H:%M:%S')}] Failed to run {script_path}: {e}")
         return None
 
 class choose_season(Thread):
-    """Thread to handle season selection based on GPIO button presses."""
     def __init__(self):
         Thread.__init__(self)
         self.running = True
