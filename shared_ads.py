@@ -10,7 +10,7 @@ i2c_lock = threading.Lock()
 def get_i2c():
     with i2c_lock:
         print(f"[{time.strftime('%H:%M:%S')}] Initializing I2C (PID: {os.getpid()})")
-        for _ in range(5):  # Increased retries
+        for _ in range(3):
             try:
                 return busio.I2C(board.SCL, board.SDA)
             except Exception as e:
@@ -18,7 +18,7 @@ def get_i2c():
                 time.sleep(0.5)
         raise RuntimeError("Failed to initialize I2C after retries")
 
-def read_adc(ads, pin, samples=20, delay=0.02):
+def read_adc(ads, pin, samples=10, delay=0.01):
     with i2c_lock:
         try:
             from adafruit_ads1x15.analog_in import AnalogIn
@@ -28,7 +28,7 @@ def read_adc(ads, pin, samples=20, delay=0.02):
                 values.append(chan.voltage)
                 time.sleep(delay)
             avg_voltage = sum(values) / len(values)
-            print(f"[{time.strftime('%H:%M:%S')}] Read ADC (PID: {os.getpid()}, pin: {pin}): {avg_voltage:.3f}V")
+            print(f"[{time.strftime('%H:%M:%S')}] Read ADC (PID: {os.getpid()}, pin: {pin}): {avg_voltage:.2f}V")
             return avg_voltage
         except Exception as e:
             print(f"[{time.strftime('%H:%M:%S')}] ADC read error (PID: {os.getpid()}, pin: {pin}): {e}")
@@ -38,7 +38,7 @@ try:
     i2c = get_i2c()
     ads1 = None
     ads2 = None
-    for _ in range(5):  # Increased retries
+    for _ in range(3):
         try:
             if not ads1:
                 ads1 = ADS1115(i2c, address=0x48)
