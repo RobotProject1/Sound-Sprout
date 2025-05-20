@@ -1,19 +1,21 @@
 from plant_classification import read_id,read_v
 from threading import Thread
 
-#1=daisy 2=sunflower 3=clover 4=potato 5=radish 6=carrot 7=garlic 8=pumpkin 9=tomato 10=corn 11=cauliflower 12=mushroom
-track = {1:'sound_sprout/sound/winter/Daisy.wav',
-         2:'sound_sprout/sound/winter/Sunflower.wav',
-         3:'sound_sprout/sound/winter/Clover.wav', 
-         4:'sound_sprout/sound/winter/Potato.wav',
-         5:'sound_sprout/sound/winter/Radish.wav', 
-         6:'sound_sprout/sound/winter/Carrot.wav',
-         7:'sound_sprout/sound/winter/Shallot.wav', 
-         8:'sound_sprout/sound/winter/Pumpkin.wav',
-         9:'sound_sprout/sound/winter/Tomato.wav', 
-         10:'sound_sprout/sound/winter/Corn.wav',
-         11:'sound_sprout/sound/winter/Cauliflower.wav',
-         12:'sound_sprout/sound/winter/Mushroom.wav'}
+#(1,Potato)(2,Tomato)(3,Carrot)(4,Sunflower)(5,Daisy)(6,Mushroom)(7,Shallot)(8,Clover)(9,Corn)(10,Pumpkin)(11,Cauliflower)(12,Radish)
+track = {
+    1: 'sound_sprout/sound/winter/Potato.wav',
+    2: 'sound_sprout/sound/winter/Tomato.wav',
+    3: 'sound_sprout/sound/winter/Carrot.wav', 
+    4: 'sound_sprout/sound/winter/Sunflower.wav',
+    5: 'sound_sprout/sound/winter/Daisy.wav', 
+    6: 'sound_sprout/sound/winter/Mushroom.wav',
+    7: 'sound_sprout/sound/winter/Shallot.wav', 
+    8: 'sound_sprout/sound/winter/Clover.wav',
+    9: 'sound_sprout/sound/winter/Corn.wav', 
+    10: 'sound_sprout/sound/winter/Pumpkin.wav',
+    11: 'sound_sprout/sound/winter/Cauliflower.wav',
+    12: 'sound_sprout/sound/winter/Radish.wav'
+}
 
 class readnwrite(Thread):
     def __init__(self):
