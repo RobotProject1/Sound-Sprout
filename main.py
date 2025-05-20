@@ -11,7 +11,7 @@ ONOFF_PIN = 26  # Physical 26 (was BCM 7)
 SEASONS = {
     'rainy': {'pin': 35, 'script': 'rainy_sound.py'},  # Physical 35 (was BCM 8)
     'spring': {'pin': 7, 'script': 'spring_sound.py'},  # Physical 7 (was BCM 4)
-    'winter': {'pin': 24, 'script': 'winter_sound.py'}  # Physical 24 (was BCM 19)
+    'winter': {'pin': 23, 'script': 'winter_sound.py'}  # Physical 24 (was BCM 19)
 }
 
 running_processes = []
