@@ -69,13 +69,11 @@ class choose_season(Thread):
     def handle_button(self, pin):
         for season, config in SEASONS.items():
             if pin == config['pin']:
-                self.ss_new = season
-                print(f"{season.capitalize()} season selected.")
-                if self.ss_new != self.ss_old:
-                    self.ss_old = self.ss_new
-                    kill_python_scripts_by_name([config['script'] for config in SEASONS.values()])
-                    run_script(SEASONS[self.ss_new]['script'])
-                    self.ss_new = ''
+                if season != self.ss_old:
+                    print(f"{season.capitalize()} season selected.")
+                    self.ss_old = season
+                    kill_python_scripts_by_name([c['script'] for c in SEASONS.values()])
+                    run_script(SEASONS[season]['script'])
                 break
 
     def stop(self):
