@@ -94,19 +94,77 @@ class checkfile(Thread):
 #             volume_percent = int((voltage / 5.0) * 100)
 #             os.system(f"pactl set-sink-volume @DEFAULT_SINK@ {volume_percent}%")
 
+# class volume(Thread):
+#     def __init__(self):
+#         Thread.__init__(self)
+#         self.last_volume = None  # Track last set volume to avoid redundant commands
+#     def read_avg_voltage(self, channel=3, samples=10, delay=0.01):
+#         values = []
+#         for i in range(samples):
+#             if i < 0.05:
+#                 continue
+#             else:
+#                 values.append(AnalogIn(ads2, channel).voltage)
+#                 time.sleep(delay)
+#         return sum(values) / len(values)
+#     def run(self):
+#         while True:
+#             try:
+#                 voltage = self.read_avg_voltage()
+#                 voltage = min(max(voltage, 0), 5.0)
+
+#                 if voltage < 0.2:
+#                     continue
+#                 elif voltage < 0.8:
+#                     volume_percent = 0
+#                 elif voltage < 1.6:
+#                     volume_percent = 20
+#                 elif voltage < 2.4:
+#                     volume_percent = 40
+#                 elif voltage < 3.2:
+#                     volume_percent = 60
+#                 elif voltage < 4.0:
+#                     volume_percent = 80
+#                 else:
+#                     volume_percent = 100
+
+#                 if volume_percent != self.last_volume:
+#                     os.system(f"pactl set-sink-volume @DEFAULT_SINK@ {volume_percent}%")
+#                     self.last_volume = volume_percent
+#                 time.sleep(0.5)
+
+#             except Exception as e:
+#                 print(f"Volume control error: {e}")
+#                 time.sleep(1)
+
 class volume(Thread):
     def __init__(self):
         Thread.__init__(self)
-        self.last_volume = None  # Track last set volume to avoid redundant commands
+        self.last_volume = None
+
     def read_avg_voltage(self, channel=3, samples=10, delay=0.01):
         values = []
         for i in range(samples):
-            if i < 0.05:
-                continue
-            else:
-                values.append(AnalogIn(ads2, channel).voltage)
-                time.sleep(delay)
+            values.append(AnalogIn(ads2, channel).voltage)
+            time.sleep(delay)
         return sum(values) / len(values)
+
+    def get_volume_percent(self, voltage):
+        # Add hysteresis threshold ±0.1V
+        thresholds = [
+            (0.8, 0),
+            (1.6, 20),
+            (2.4, 40),
+            (3.2, 60),
+            (4.0, 80),
+            (5.0, 100)
+        ]
+
+        for threshold, percent in thresholds:
+            if voltage < threshold:
+                return percent
+        return 100
+
     def run(self):
         while True:
             try:
@@ -114,23 +172,15 @@ class volume(Thread):
                 voltage = min(max(voltage, 0), 5.0)
 
                 if voltage < 0.2:
-                    continue
-                elif voltage < 0.8:
-                    volume_percent = 0
-                elif voltage < 1.6:
-                    volume_percent = 20
-                elif voltage < 2.4:
-                    volume_percent = 40
-                elif voltage < 3.2:
-                    volume_percent = 60
-                elif voltage < 4.0:
-                    volume_percent = 80
-                else:
-                    volume_percent = 100
+                    continue  # Noise rejection at near 0V
 
-                if volume_percent != self.last_volume:
+                volume_percent = self.get_volume_percent(voltage)
+
+                # Hysteresis check
+                if self.last_volume is None or abs(volume_percent - self.last_volume) >= 20:
                     os.system(f"pactl set-sink-volume @DEFAULT_SINK@ {volume_percent}%")
                     self.last_volume = volume_percent
+
                 time.sleep(0.5)
 
             except Exception as e:
