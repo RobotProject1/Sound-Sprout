@@ -116,7 +116,7 @@ class volume(Thread):
                 if voltage < 0.2:
                     continue
                 else:
-                    volume_percent = int((voltage / 5.0) * 100)
+                    volume_percent = int((voltage / 5.0) * 12.5)
 
                 if volume_percent != self.last_volume:
                     os.system(f"pactl set-sink-volume @DEFAULT_SINK@ {volume_percent}%")
