@@ -97,40 +97,74 @@ class checkfile(Thread):
 class volume(Thread):
     def __init__(self):
         Thread.__init__(self)
-        self.last_volume = None  # Track last set volume to avoid redundant commands
-    def read_avg_voltage(self, channel=3, samples=10, delay=0.01):
-        values = []
-        for _ in range(samples):
-            values.append(AnalogIn(ads2, channel).voltage)
-            time.sleep(delay)
-        return sum(values) / len(values)
+        self.last_voltage = None
+        self.last_volume = None
+
     def run(self):
         while True:
             try:
-                voltage = self.read_avg_voltage()
+                vol = AnalogIn(ads2, 3)
+                voltage = vol.voltage
                 voltage = min(max(voltage, 0), 5.0)
 
-                if voltage < 0.05:
-                    continue
-                if voltage < 1.0:
-                    volume_percent = 0
-                elif voltage < 2.0:
-                    volume_percent = 25
-                elif voltage < 3.0:
-                    volume_percent = 50
-                elif voltage < 4.0:
-                    volume_percent = 75
-                else:
-                    volume_percent = 100
+                # Reject glitches: only accept large jumps if they persist
+                if self.last_voltage is not None:
+                    if abs(voltage - self.last_voltage) > 1.0:
+                        # Suspect glitch, skip this reading
+                        time.sleep(0.1)
+                        continue
+
+                self.last_voltage = voltage
+
+                volume_percent = int((voltage / 5.0) * 100)
 
                 if volume_percent != self.last_volume:
                     os.system(f"pactl set-sink-volume @DEFAULT_SINK@ {volume_percent}%")
                     self.last_volume = volume_percent
+
                 time.sleep(0.5)
 
             except Exception as e:
                 print(f"Volume control error: {e}")
                 time.sleep(1)
+
+# class volume(Thread):
+#     def __init__(self):
+#         Thread.__init__(self)
+#         self.last_volume = None  # Track last set volume to avoid redundant commands
+#     def read_avg_voltage(self, channel=3, samples=10, delay=0.01):
+#         values = []
+#         for _ in range(samples):
+#             values.append(AnalogIn(ads2, channel).voltage)
+#             time.sleep(delay)
+#         return sum(values) / len(values)
+#     def run(self):
+#         while True:
+#             try:
+#                 voltage = self.read_avg_voltage()
+#                 voltage = min(max(voltage, 0), 5.0)
+
+#                 if voltage < 0.05:
+#                     continue
+#                 if voltage < 1.0:
+#                     volume_percent = 0
+#                 elif voltage < 2.0:
+#                     volume_percent = 25
+#                 elif voltage < 3.0:
+#                     volume_percent = 50
+#                 elif voltage < 4.0:
+#                     volume_percent = 75
+#                 else:
+#                     volume_percent = 100
+
+#                 if volume_percent != self.last_volume:
+#                     os.system(f"pactl set-sink-volume @DEFAULT_SINK@ {volume_percent}%")
+#                     self.last_volume = volume_percent
+#                 time.sleep(0.5)
+
+#             except Exception as e:
+#                 print(f"Volume control error: {e}")
+#                 time.sleep(1)
 
 if __name__ == "__main__": 
     mtime = os.path.getmtime('sound_sprout/path_list.txt')
