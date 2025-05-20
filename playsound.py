@@ -100,12 +100,9 @@ class volume(Thread):
         self.last_volume = None  # Track last set volume to avoid redundant commands
     def read_avg_voltage(self, channel=3, samples=10, delay=0.01):
         values = []
-        for i in range(samples):
-            if i < 0.05:
-                continue
-            else:
-                values.append(AnalogIn(ads2, channel).voltage)
-                time.sleep(delay)
+        for _ in range(samples):
+            values.append(AnalogIn(ads2, channel).voltage)
+            time.sleep(delay)
         return sum(values) / len(values)
     def run(self):
         while True:

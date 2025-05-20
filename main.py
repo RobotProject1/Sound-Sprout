@@ -89,6 +89,7 @@ class choose_season(Thread):
             GPIO.remove_event_detect(config['pin'])
 
 if __name__ == '__main__':
+<<<<<<< HEAD
     GPIO.setwarnings(False)
     GPIO.setmode(GPIO.BCM)
     GPIO.setup(ONOFF_PIN, GPIO.IN)
@@ -114,3 +115,23 @@ if __name__ == '__main__':
     finally:
         GPIO.cleanup()
         logger.info("GPIO resources cleaned up.")
+=======
+    onoff_pin = 9 #physical 21
+    GPIO.setmode(GPIO.BCM)  
+    GPIO.setup(onoff_pin, GPIO.IN)
+    target_scripts = ['playsound.py','plant_classification.py','spring_sound.py','rainy_sound.py','winter_sound.py']
+    while True:
+        GPIO.wait_for_edge(onoff_pin, GPIO.RISING)
+        print("ON button pressed. Starting system...")
+        time.sleep(0.3)
+        choose_season_thread = choose_season()
+        choose_season_thread.start()
+        run_script('playsound.py')
+        GPIO.wait_for_edge(onoff_pin, GPIO.RISING)
+        print("OFF button pressed. Stopping system...")
+        time.sleep(0.3)
+        choose_season_thread.stop()
+        ss_old = ''
+        ss_new = 'spring'
+        kill_python_scripts_by_name(target_scripts)
+>>>>>>> 235ead6210270d065194183419aa5882dc40562d
