@@ -84,7 +84,7 @@ class choose_season(Thread):
             GPIO.remove_event_detect(config['pin'])
 
 if __name__ == '__main__':
-    onoff_pin = 9 #physical 21
+    onoff_pin = 7 #physical 26
     GPIO.setmode(GPIO.BCM)  
     GPIO.setup(onoff_pin, GPIO.IN)
     target_scripts = ['playsound.py','plant_classification.py','spring_sound.py','rainy_sound.py','winter_sound.py']
