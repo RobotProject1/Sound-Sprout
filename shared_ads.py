@@ -20,9 +20,22 @@ def get_i2c():
 
 try:
     i2c = get_i2c()
-    ads1 = ADS1115(i2c, address=0x48)
-    ads2 = ADS1115(i2c, address=0x49)
-    print(f"[{time.strftime('%H:%M:%S')}] ADS1115 initialized: ads1={hex(0x48)}, ads2={hex(0x49)}")
+    ads1 = None
+    ads2 = None
+    for _ in range(3):  # Retry ADC initialization
+        try:
+            if not ads1:
+                ads1 = ADS1115(i2c, address=0x48)
+                print(f"[{time.strftime('%H:%M:%S')}] ADS1115 initialized: ads1={hex(0x48)}")
+            if not ads2:
+                ads2 = ADS1115(i2c, address=0x49)
+                print(f"[{time.strftime('%H:%M:%S')}] ADS1115 initialized: ads2={hex(0x49)}")
+            break
+        except Exception as e:
+            print(f"[{time.strftime('%H:%M:%S')}] ADS1115 init attempt failed: {e}")
+            time.sleep(0.5)
+    if not ads1 or not ads2:
+        raise RuntimeError("Failed to initialize ADS1115 after retries")
 except Exception as e:
     print(f"[{time.strftime('%H:%M:%S')}] ADS1115 initialization error: {e}")
     raise
