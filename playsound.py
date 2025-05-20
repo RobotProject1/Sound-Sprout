@@ -144,26 +144,16 @@ class volume(Thread):
                 voltage = self.read_avg_voltage()
                 voltage = min(max(voltage, 0), 5.0)
 
-                if voltage < 0.2:
+                if voltage < 0.05:
                     continue
-                elif voltage < 0.5:
+                if voltage < 1.0:
                     volume_percent = 0
-                elif voltage < 1.0:
-                    volume_percent = 12.5
-                elif voltage < 1.5:
-                    volume_percent = 25
                 elif voltage < 2.0:
-                    volume_percent = 37.5
-                elif voltage < 2.5:
-                    volume_percent = 50
+                    volume_percent = 25
                 elif voltage < 3.0:
-                    volume_percent = 62.5
-                elif voltage < 3.5:
-                    volume_percent = 75
+                    volume_percent = 50
                 elif voltage < 4.0:
-                    volume_percent = 87.5
-                elif voltage < 4.5:
-                    volume_percent = 93.75
+                    volume_percent = 75
                 else:
                     volume_percent = 100
 
