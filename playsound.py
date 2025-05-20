@@ -83,16 +83,47 @@ class checkfile(Thread):
                 print(f"An error occurred: {e}")
                 time.sleep(1) 
 
+# class volume(Thread):
+#     def __init__(self):
+#         Thread.__init__(self)
+#     def run(self):
+#         while True:
+#             vol = AnalogIn(ads2, 3)
+#             voltage = vol.voltage
+#             voltage = min(max(voltage, 0), 5.0)  
+#             volume_percent = int((voltage / 5.0) * 100)
+#             os.system(f"pactl set-sink-volume @DEFAULT_SINK@ {volume_percent}%")
+
 class volume(Thread):
     def __init__(self):
         Thread.__init__(self)
+        self.last_volume = None  # Track last set volume to avoid redundant commands
     def run(self):
         while True:
-            vol = AnalogIn(ads2, 3)
-            voltage = vol.voltage
-            voltage = min(max(voltage, 0), 5.0)  
-            volume_percent = int((voltage / 5.0) * 100)
-            os.system(f"pactl set-sink-volume @DEFAULT_SINK@ {volume_percent}%")
+            try:
+                vol = AnalogIn(ads2, 3)
+                voltage = vol.voltage
+                voltage = min(max(voltage, 0), 5.0)
+
+                if voltage < 1.0:
+                    volume_percent = 0
+                elif voltage < 2.0:
+                    volume_percent = 25
+                elif voltage < 3.0:
+                    volume_percent = 50
+                elif voltage < 4.0:
+                    volume_percent = 75
+                else:
+                    volume_percent = 100
+
+                if volume_percent != self.last_volume:
+                    os.system(f"pactl set-sink-volume @DEFAULT_SINK@ {volume_percent}%")
+                    self.last_volume = volume_percent
+                time.sleep(0.5)
+            
+            except Exception as e:
+                print(f"Volume control error: {e}")
+                time.sleep(1)
 
 if __name__ == "__main__": 
     mtime = os.path.getmtime('sound_sprout/path_list.txt')
