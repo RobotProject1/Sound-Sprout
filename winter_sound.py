@@ -1,14 +1,15 @@
 import time
 from threading import Thread
-from shared_ads import ads1, read_adc
 from plant_classification import read_id
 from multiprocessing import Queue
 
 class readnwrite(Thread):
-    def __init__(self, audio_queue):
+    def __init__(self, audio_queue, ads1, ads2):
         Thread.__init__(self)
         self.running = True
         self.audio_queue = audio_queue
+        self.ads1 = ads1
+        self.ads2 = ads2
 
     def run(self):
         print(f"[{time.strftime('%H:%M:%S')}] readnwrite thread started (PID: {os.getpid()})")
@@ -16,7 +17,7 @@ class readnwrite(Thread):
             while self.running:
                 try:
                     # Read audio paths for the current season, including ambient
-                    audio_paths = read_id('winter')
+                    audio_paths = read_id('winter', self.ads1, self.ads2)
                     print(f"[{time.strftime('%H:%M:%S')}] Detected audio paths: {audio_paths}")
                     
                     if audio_paths:
@@ -37,10 +38,10 @@ class readnwrite(Thread):
         print(f"[{time.strftime('%H:%M:%S')}] Stopping readnwrite thread")
         self.running = False
 
-def run(audio_queue):
+def run(audio_queue, ads1, ads2):
     print(f"[{time.strftime('%H:%M:%S')}] winter_sound.py started (PID: {os.getpid()})")
     try:
-        readnwrite_thread = readnwrite(audio_queue)
+        readnwrite_thread = readnwrite(audio_queue, ads1, ads2)
         readnwrite_thread.start()
         while True:
             time.sleep(1)
@@ -54,4 +55,5 @@ def run(audio_queue):
         readnwrite_thread.join()
 
 if __name__ == "__main__":
-    run(Queue())  # Fallback for standalone testing
+    from shared_ads import ads1, ads2
+    run(Queue(), ads1, ads2)  # Fallback for standalone testing

@@ -6,6 +6,9 @@ import Jetson.GPIO as GPIO
 from multiprocessing import Queue, Process
 import importlib.util
 import signal
+import board
+import busio
+from adafruit_ads1x15.ads1115 import ADS1115
 
 # GPIO Pin Configuration (using BOARD mode, physical pin numbers)
 ONOFF_PIN = 26
@@ -19,6 +22,16 @@ running_processes = []
 process_lock = Lock()
 current_season = None
 audio_queue = Queue()  # Shared queue for audio paths
+
+# Initialize I2C and ADC
+try:
+    i2c = busio.I2C(board.SCL, board.SDA)
+    ads1 = ADS1115(i2c, address=0x48)
+    ads2 = ADS1115(i2c, address=0x49)
+    print(f"[{time.strftime('%H:%M:%S')}] ADS1115 initialized: ads1={hex(0x48)}, ads2={hex(0x49)}")
+except Exception as e:
+    print(f"[{time.strftime('%H:%M:%S')}] ADS1115 initialization error: {e}")
+    raise
 
 def load_module(module_name, file_path):
     spec = importlib.util.spec_from_file_location(module_name, file_path)
@@ -56,7 +69,7 @@ def kill_scripts_by_name(target_names):
                 running_processes.remove(proc)
         print(f"[{time.strftime('%H:%M:%S')}] Running processes after kill: {[proc.pid for proc in running_processes]}")
 
-def run_script(module_name, audio_queue):
+def run_script(module_name, audio_queue, ads1, ads2):
     script_path = os.path.join(os.path.dirname(__file__), f"{module_name}.py")
     print(f"[{time.strftime('%H:%M:%S')}] Checking script path: {script_path}")
     if not os.path.exists(script_path):
@@ -64,7 +77,7 @@ def run_script(module_name, audio_queue):
         return None
     try:
         module = load_module(module_name, script_path)
-        proc = Process(target=module.run, args=(audio_queue,), daemon=True)
+        proc = Process(target=module.run, args=(audio_queue, ads1, ads2), daemon=True)
         proc.module_name = module_name  # Store module name for identification
         proc.start()
         with process_lock:
@@ -76,14 +89,16 @@ def run_script(module_name, audio_queue):
         return None
 
 class choose_season(Thread):
-    def __init__(self, audio_queue):
+    def __init__(self, audio_queue, ads1, ads2):
         Thread.__init__(self)
         self.running = True
         self.audio_queue = audio_queue
+        self.ads1 = ads1
+        self.ads2 = ads2
         print(f"[{time.strftime('%H:%M:%S')}] Initializing choose_season thread")
         for config in SEASONS.values():
             try:
-                GPIO.setup(config['pin'], GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+                GPIO.setup(config['pin'], GPIO.IN)
                 GPIO.add_event_detect(
                     config['pin'], GPIO.RISING, callback=self.handle_button, bouncetime=300
                 )
@@ -104,7 +119,7 @@ class choose_season(Thread):
                     print(f"[{time.strftime('%H:%M:%S')}] Killing season scripts before starting {config['script']}")
                     kill_scripts_by_name([c['script'] for c in SEASONS.values()])
                     print(f"[{time.strftime('%H:%M:%S')}] Starting {config['script']}")
-                    run_script(config['script'], self.audio_queue)
+                    run_script(config['script'], self.audio_queue, self.ads1, self.ads2)
                     current_season = season
                     break
                 else:
@@ -133,9 +148,9 @@ if __name__ == "__main__":
             GPIO.wait_for_edge(ONOFF_PIN, GPIO.RISING)
             print(f"[{time.strftime('%H:%M:%S')}] ON button pressed. Starting system...")
             time.sleep(0.3)
-            choose_season_thread = choose_season(audio_queue)
+            choose_season_thread = choose_season(audio_queue, ads1, ads2)
             choose_season_thread.start()
-            run_script('playsound', audio_queue)
+            run_script('playsound', audio_queue, ads1, ads2)
             GPIO.wait_for_edge(ONOFF_PIN, GPIO.RISING)
             print(f"[{time.strftime('%H:%M:%S')}] OFF button pressed. Stopping system...")
             time.sleep(0.3)
@@ -150,3 +165,5 @@ if __name__ == "__main__":
         GPIO.cleanup()
         while not audio_queue.empty():
             audio_queue.get()
+    finally:
+        i2c.deinit()
