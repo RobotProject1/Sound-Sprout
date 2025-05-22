@@ -97,7 +97,7 @@ class choose_season(Thread):
         print(f"[{time.strftime('%H:%M:%S')}] Initializing choose_season thread")
         for config in SEASONS.values():
             try:
-                GPIO.setup(config['pin'], GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+                GPIO.setup(config         config['pin'], GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
                 GPIO.add_event_detect(
                     config['pin'], GPIO.RISING, callback=self.handle_button, bouncetime=300
                 )
@@ -149,10 +149,10 @@ if __name__ == "__main__":
             time.sleep(0.3)
             # Create a new Pipe for each system start
             receiver_conn, sender_conn = multiprocessing.Pipe(duplex=False)
-            # Serialize pipe file descriptors
-            receiver_fd = multiprocessing.reduction.dump(receiver_conn, None)
-            sender_fd = multiprocessing.reduction.dump(sender_conn, None)
-            # Convert to string for command-line passing
+            # Serialize pipe connections using reduce_connection
+            receiver_fd = multiprocessing.reduction.reduce_connection(receiver_conn)
+            sender_fd = multiprocessing.reduction.reduce_connection(sender_conn)
+            # Convert to hexadecimal strings for command-line passing
             receiver_fd_str = pickle.dumps(receiver_fd).hex()
             sender_fd_str = pickle.dumps(sender_fd).hex()
             choose_season_thread = choose_season(sender_fd_str)
