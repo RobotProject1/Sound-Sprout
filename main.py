@@ -97,7 +97,7 @@ class choose_season(Thread):
         print(f"[{time.strftime('%H:%M:%S')}] Initializing choose_season thread")
         for config in SEASONS.values():
             try:
-                GPIO.setup(config         config['pin'], GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+                GPIO.setup(config['pin'], GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
                 GPIO.add_event_detect(
                     config['pin'], GPIO.RISING, callback=self.handle_button, bouncetime=300
                 )
