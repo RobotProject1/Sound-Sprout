@@ -3,14 +3,13 @@ import os
 from threading import Thread
 from shared_ads import ads1, read_adc
 from plant_classification import read_id
-import multiprocessing
-import pickle
+from multiprocessing import Queue
 
 class readnwrite(Thread):
-    def __init__(self, sender_conn):
+    def __init__(self, audio_queue):
         Thread.__init__(self)
         self.running = True
-        self.sender_conn = sender_conn
+        self.audio_queue = audio_queue
 
     def run(self):
         print(f"[{time.strftime('%H:%M:%S')}] readnwrite thread started (PID: {os.getpid()})")
@@ -22,13 +21,11 @@ class readnwrite(Thread):
                     print(f"[{time.strftime('%H:%M:%S')}] Detected audio paths: {audio_paths}")
                     
                     if audio_paths:
-                        # Send to pipe
-                        self.sender_conn.send(audio_paths)
-                        print(f"[{time.strftime('%H:%M:%S')}] Sent to pipe: {audio_paths}")
+                        # Send to queue
+                        self.audio_queue.put(audio_paths)
+                        print(f"[{time.strftime('%H:%M:%S')}] Sent to queue: {audio_paths}")
                     else:
-                        # Send empty list if no paths
-                        self.sender_conn.send([])
-                        print(f"[{time.strftime('%H:%M:%S')}] No valid plant IDs detected, sent empty list")
+                        print(f"[{time.strftime('%H:%M:%S')}] No valid plant IDs detected")
                     
                     time.sleep(1)
                 except Exception as e:
@@ -42,13 +39,11 @@ class readnwrite(Thread):
         self.running = False
 
 if __name__ == "__main__":
-    import sys
+    import multiprocessing
     print(f"[{time.strftime('%H:%M:%S')}] spring_sound.py started (PID: {os.getpid()})")
-    # Deserialize pipe sender end from command-line argument
-    sender_fd = pickle.loads(bytes.fromhex(sys.argv[1])) if len(sys.argv) > 1 else None
-    sender_conn = multiprocessing.reduction.rebuild_pipe_connection(sender_fd, readable=False, writable=True)
+    audio_queue = multiprocessing.Manager().Queue()  # Create queue in main process
     try:
-        readnwrite_thread = readnwrite(sender_conn)
+        readnwrite_thread = readnwrite(audio_queue)
         readnwrite_thread.start()
         while True:
             time.sleep(1)
@@ -56,9 +51,7 @@ if __name__ == "__main__":
         print(f"[{time.strftime('%H:%M:%S')}] Shutting down spring_sound.py")
         readnwrite_thread.stop()
         readnwrite_thread.join()
-        sender_conn.close()
     except Exception as e:
         print(f"[{time.strftime('%H:%M:%S')}] Fatal error in spring_sound.py: {e}")
         readnwrite_thread.stop()
         readnwrite_thread.join()
-        sender_conn.close()
