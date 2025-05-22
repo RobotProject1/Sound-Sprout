@@ -5,6 +5,7 @@ import time
 from threading import Thread, Event
 from shared_ads import ads2, read_adc
 from multiprocessing import Queue
+import os
 
 def mix(audio_clip_paths):
     audio_arrays = []
