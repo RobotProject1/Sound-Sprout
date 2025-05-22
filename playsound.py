@@ -2,10 +2,11 @@ import wave
 import numpy as np
 import sounddevice as sd
 import time
+import os
 from threading import Thread, Event
 from shared_ads import ads2, read_adc
-from multiprocessing import Queue
-import os
+import multiprocessing
+import pickle
 
 def mix(audio_clip_paths):
     audio_arrays = []
@@ -59,25 +60,25 @@ def callback(outdata, frames, time, status):
     outdata[:] = chunk
     index = (index + frames) % total_frames
 
-class checkqueue(Thread):
-    def __init__(self, stop_event, audio_queue):
+class checkpipe(Thread):
+    def __init__(self, stop_event, receiver_conn):
         Thread.__init__(self)
         self.stop_event = stop_event
-        self.audio_queue = audio_queue
+        self.receiver_conn = receiver_conn
 
     def run(self):
         global mixed_audio, sample_rate, num_channels
-        print(f"[{time.strftime('%H:%M:%S')}] checkqueue thread started (PID: {os.getpid()})")
+        print(f"[{time.strftime('%H:%M:%S')}] checkpipe thread started (PID: {os.getpid()})")
         while not self.stop_event.is_set():
             try:
-                if not self.audio_queue.empty():
-                    audio_clip_paths = self.audio_queue.get()
+                if self.receiver_conn.poll():
+                    audio_clip_paths = self.receiver_conn.recv()
                     print(f"[{time.strftime('%H:%M:%S')}] Received audio paths: {audio_clip_paths}")
                     mixed_audio, sample_rate, num_channels = mix(audio_clip_paths)
                     print(f"[{time.strftime('%H:%M:%S')}] Mixed audio shape: {mixed_audio.shape}, sample rate: {sample_rate}, channels: {num_channels}")
                 time.sleep(0.1)
             except Exception as e:
-                print(f"[{time.strftime('%H:%M:%S')}] checkqueue error: {e}")
+                print(f"[{time.strftime('%H:%M:%S')}] checkpipe error: {e}")
                 time.sleep(0.1)
 
 class volume(Thread):
@@ -107,21 +108,23 @@ class volume(Thread):
                 time.sleep(0.2)
 
 if __name__ == "__main__":
-    import multiprocessing
+    import sys
     stop_event = Event()
     mixed_audio = np.zeros((542118, 2))
     sample_rate = 48000
     num_channels = 2
     index = 0
-    audio_queue = multiprocessing.Manager().Queue()  # Create queue in main process
+    # Deserialize pipe receiver end from command-line argument
+    receiver_fd = pickle.loads(bytes.fromhex(sys.argv[1])) if len(sys.argv) > 1 else None
+    receiver_conn = multiprocessing.reduction.rebuild_pipe_connection(receiver_fd, readable=True, writable=False)
 
     try:
         stream = sd.OutputStream(samplerate=sample_rate, channels=num_channels, callback=callback, blocksize=8192)
         stream.start()
 
-        checkqueue_thread = checkqueue(stop_event, audio_queue)
+        checkpipe_thread = checkpipe(stop_event, receiver_conn)
         adjust_volume_thread = volume(stop_event)
-        checkqueue_thread.start()
+        checkpipe_thread.start()
         adjust_volume_thread.start()
         print(f"[{time.strftime('%H:%M:%S')}] Playsound good to go!")
 
@@ -130,15 +133,17 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         print(f"[{time.strftime('%H:%M:%S')}] KeyboardInterrupt received, stopping...")
         stop_event.set()
-        checkqueue_thread.join()
+        checkpipe_thread.join()
         adjust_volume_thread.join()
         stream.stop()
         stream.close()
+        receiver_conn.close()
         print(f"[{time.strftime('%H:%M:%S')}] Playsound shutdown complete.")
     except Exception as e:
         print(f"[{time.strftime('%H:%M:%S')}] Unexpected error: {e}")
         stop_event.set()
-        checkqueue_thread.join()
+        checkpipe_thread.join()
         adjust_volume_thread.join()
         stream.stop()
         stream.close()
+        receiver_conn.close()
