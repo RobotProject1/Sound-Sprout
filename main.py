@@ -5,7 +5,6 @@ import sys
 from threading import Thread, Lock
 import time
 import Jetson.GPIO as GPIO
-from multiprocessing import Queue
 
 # GPIO Pin Configuration (using BOARD mode, physical pin numbers)
 ONOFF_PIN = 26
@@ -18,7 +17,7 @@ SEASONS = {
 running_processes = []
 process_lock = Lock()
 current_season = None
-audio_queue = Queue()  # Shared queue for audio paths
+AUDIO_PATHS_FILE = os.path.join(os.path.dirname(__file__), 'sound_sprout/audio_paths.txt')
 
 def kill_python_scripts_by_name(target_names):
     with process_lock:
@@ -47,7 +46,7 @@ def kill_python_scripts_by_name(target_names):
                 print(f"[{time.strftime('%H:%M:%S')}] Unexpected error in kill_python_scripts_by_name: {e}")
         print(f"[{time.strftime('%H:%M:%S')}] Running processes after kill: {[proc.pid for proc in running_processes]}")
 
-def run_script(script_name, queue=None):
+def run_script(script_name, audio_paths_file=None):
     script_path = os.path.join(os.path.dirname(__file__), script_name)
     print(f"[{time.strftime('%H:%M:%S')}] Checking script path: {script_path}")
     if not os.path.exists(script_path):
@@ -61,9 +60,11 @@ def run_script(script_name, queue=None):
         if not os.path.exists(sys.executable):
             print(f"[{time.strftime('%H:%M:%S')}] ERROR: Python executable {sys.executable} not found.")
             return None
-        print(f"[{time.strftime('%H:%M:%S')}] Attempting to run script: {script_path} with {sys.executable}")
-        # Pass queue as a command-line argument or handle via multiprocessing
-        proc = subprocess.Popen([sys.executable, script_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        cmd = [sys.executable, script_path]
+        if audio_paths_file:
+            cmd.append(audio_paths_file)  # Pass audio_paths.txt path as argument
+        print(f"[{time.strftime('%H:%M:%S')}] Attempting to run script: {script_path} with {cmd}")
+        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, cwd=os.path.dirname(__file__))
         with process_lock:
             running_processes.append(proc)
         print(f"[{time.strftime('%H:%M:%S')}] Successfully started {script_name} with PID {proc.pid}")
@@ -81,10 +82,10 @@ def run_script(script_name, queue=None):
         return None
 
 class choose_season(Thread):
-    def __init__(self, audio_queue):
+    def __init__(self, audio_paths_file):
         Thread.__init__(self)
         self.running = True
-        self.audio_queue = audio_queue
+        self.audio_paths_file = audio_paths_file
         print(f"[{time.strftime('%H:%M:%S')}] Initializing choose_season thread")
         for config in SEASONS.values():
             try:
@@ -109,7 +110,7 @@ class choose_season(Thread):
                     print(f"[{time.strftime('%H:%M:%S')}] Killing season scripts before starting {config['script']}")
                     kill_python_scripts_by_name([c['script'] for c in SEASONS.values()])
                     print(f"[{time.strftime('%H:%M:%S')}] Starting {config['script']}")
-                    run_script(config['script'], self.audio_queue)
+                    run_script(config['script'], self.audio_paths_file)
                     current_season = season
                     break
                 else:
@@ -134,24 +135,27 @@ if __name__ == "__main__":
     target_scripts = ['playsound.py', 'plant_classification.py', 'spring_sound.py', 'rainy_sound.py', 'winter_sound.py']
     print(f"[{time.strftime('%H:%M:%S')}] Main script started")
     try:
+        # Initialize audio_paths.txt
+        with open(AUDIO_PATHS_FILE, 'w') as f:
+            f.write('')
         while True:
             GPIO.wait_for_edge(ONOFF_PIN, GPIO.RISING)
             print(f"[{time.strftime('%H:%M:%S')}] ON button pressed. Starting system...")
             time.sleep(0.3)
-            choose_season_thread = choose_season(audio_queue)
+            choose_season_thread = choose_season(AUDIO_PATHS_FILE)
             choose_season_thread.start()
-            run_script('playsound.py', audio_queue)
+            run_script('playsound.py', AUDIO_PATHS_FILE)
             GPIO.wait_for_edge(ONOFF_PIN, GPIO.RISING)
             print(f"[{time.strftime('%H:%M:%S')}] OFF button pressed. Stopping system...")
             time.sleep(0.3)
             choose_season_thread.stop()
             kill_python_scripts_by_name(target_scripts)
-            # Clear the queue on shutdown
-            while not audio_queue.empty():
-                audio_queue.get()
+            # Clear audio_paths.txt on shutdown
+            with open(AUDIO_PATHS_FILE, 'w') as f:
+                f.write('')
     except KeyboardInterrupt:
         print(f"[{time.strftime('%H:%M:%S')}] Shutting down...")
         kill_python_scripts_by_name(target_scripts)
         GPIO.cleanup()
-        while not audio_queue.empty():
-            audio_queue.get()
+        with open(AUDIO_PATHS_FILE, 'w') as f:
+            f.write('')

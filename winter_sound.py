@@ -1,14 +1,14 @@
 import time
+import os
 from threading import Thread
 from shared_ads import ads1, read_adc
 from plant_classification import read_id
-from multiprocessing import Queue
 
 class readnwrite(Thread):
-    def __init__(self, audio_queue):
+    def __init__(self, audio_paths_file):
         Thread.__init__(self)
         self.running = True
-        self.audio_queue = audio_queue
+        self.audio_paths_file = audio_paths_file
 
     def run(self):
         print(f"[{time.strftime('%H:%M:%S')}] readnwrite thread started (PID: {os.getpid()})")
@@ -20,11 +20,15 @@ class readnwrite(Thread):
                     print(f"[{time.strftime('%H:%M:%S')}] Detected audio paths: {audio_paths}")
                     
                     if audio_paths:
-                        # Send to queue
-                        self.audio_queue.put(audio_paths)
-                        print(f"[{time.strftime('%H:%M:%S')}] Sent to queue: {audio_paths}")
+                        # Write to audio_paths.txt
+                        with open(self.audio_paths_file, 'w') as f:
+                            f.write(','.join(audio_paths))
+                        print(f"[{time.strftime('%H:%M:%S')}] Wrote to {self.audio_paths_file}: {audio_paths}")
                     else:
-                        print(f"[{time.strftime('%H:%M:%S')}] No valid plant IDs detected")
+                        # Write only ambient if no plants detected
+                        with open(self.audio_paths_file, 'w') as f:
+                            f.write('sound_sprout/sound/winter/AMBIENT.wav')
+                        print(f"[{time.strftime('%H:%M:%S')}] No valid plant IDs detected, wrote ambient to {self.audio_paths_file}")
                     
                     time.sleep(1)
                 except Exception as e:
@@ -38,11 +42,11 @@ class readnwrite(Thread):
         self.running = False
 
 if __name__ == "__main__":
-    import multiprocessing
+    import sys
     print(f"[{time.strftime('%H:%M:%S')}] winter_sound.py started (PID: {os.getpid()})")
-    audio_queue = multiprocessing.Manager().Queue()  # Create queue in main process
+    audio_paths_file = sys.argv[1] if len(sys.argv) > 1 else 'sound_sprout/audio_paths.txt'
     try:
-        readnwrite_thread = readnwrite(audio_queue)
+        readnwrite_thread = readnwrite(audio_paths_file)
         readnwrite_thread.start()
         while True:
             time.sleep(1)
