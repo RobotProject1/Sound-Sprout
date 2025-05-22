@@ -2,10 +2,12 @@ import wave
 import numpy as np
 import sounddevice as sd
 import time
-from threading import Thread, Event
+from threading import Thread, Event, Lock
 import os
 from multiprocessing import Queue
 from adafruit_ads1x15.analog_in import AnalogIn
+
+adc_lock = Lock()
 
 def mix(audio_clip_paths):
     audio_arrays = []
@@ -60,18 +62,19 @@ def callback(outdata, frames, time, status):
     index = (index + frames) % total_frames
 
 def read_adc(ads, pin, samples=10, delay=0.01):
-    try:
-        values = []
-        for _ in range(samples):
-            chan = AnalogIn(ads, pin)
-            values.append(chan.voltage)
-            time.sleep(delay)
-        avg_voltage = sum(values) / len(values)
-        print(f"[{time.strftime('%H:%M:%S')}] Read ADC (PID: {os.getpid()}, pin: {pin}): {avg_voltage:.2f}V")
-        return avg_voltage
-    except Exception as e:
-        print(f"[{time.strftime('%H:%M:%S')}] ADC read error (PID: {os.getpid()}, pin: {pin}): {e}")
-        return None
+    with adc_lock:
+        try:
+            values = []
+            for _ in range(samples):
+                chan = AnalogIn(ads, pin)
+                values.append(chan.voltage)
+                time.sleep(delay)
+            avg_voltage = sum(values) / len(values)
+            print(f"[{time.strftime('%H:%M:%S')}] Read ADC (pin: {pin}): {avg_voltage:.2f}V")
+            return avg_voltage
+        except Exception as e:
+            print(f"[{time.strftime('%H:%M:%S')}] ADC read error (pin: {pin}): {e}")
+            return None
 
 class checkqueue(Thread):
     def __init__(self, stop_event, audio_queue):
@@ -81,7 +84,7 @@ class checkqueue(Thread):
 
     def run(self):
         global mixed_audio, sample_rate, num_channels
-        print(f"[{time.strftime('%H:%M:%S')}] checkqueue thread started (PID: {os.getpid()})")
+        print(f"[{time.strftime('%H:%M:%S')}] checkqueue thread started")
         while not self.stop_event.is_set():
             try:
                 if not self.audio_queue.empty():
@@ -94,6 +97,10 @@ class checkqueue(Thread):
                 print(f"[{time.strftime('%H:%M:%S')}] checkqueue error: {e}")
                 time.sleep(0.1)
 
+    def stop(self):
+        print(f"[{time.strftime('%H:%M:%S')}] Stopping checkqueue thread")
+        self.stop_event.set()
+
 class volume(Thread):
     def __init__(self, stop_event, ads2):
         Thread.__init__(self)
@@ -102,7 +109,7 @@ class volume(Thread):
         self.last_volume = None
 
     def run(self):
-        print(f"[{time.strftime('%H:%M:%S')}] volume thread started (PID: {os.getpid()})")
+        print(f"[{time.strftime('%H:%M:%S')}] volume thread started")
         while not self.stop_event.is_set():
             try:
                 voltage = read_adc(self.ads2, 3)
@@ -120,6 +127,10 @@ class volume(Thread):
             except Exception as e:
                 print(f"[{time.strftime('%H:%M:%S')}] Volume control error: {e}")
                 time.sleep(0.2)
+
+    def stop(self):
+        print(f"[{time.strftime('%H:%M:%S')}] Stopping volume thread")
+        self.stop_event.set()
 
 def run(audio_queue, ads1, ads2):
     stop_event = Event()
@@ -139,25 +150,30 @@ def run(audio_queue, ads1, ads2):
         adjust_volume_thread.start()
         print(f"[{time.strftime('%H:%M:%S')}] Playsound good to go!")
 
-        while True:
+        while not stop_event.is_set():
             time.sleep(1)
 
-    except KeyboardInterrupt:
-        print(f"[{time.strftime('%H:%M:%S')}] KeyboardInterrupt received, stopping...")
+    except Exception as e:
+        print(f"[{time.strftime('%H:%M:%S')}] Unexpected error: {e}")
+    finally:
         stop_event.set()
+        checkqueue_thread.stop()
+        adjust_volume_thread.stop()
         checkqueue_thread.join()
         adjust_volume_thread.join()
         stream.stop()
         stream.close()
         print(f"[{time.strftime('%H:%M:%S')}] Playsound shutdown complete.")
-    except Exception as e:
-        print(f"[{time.strftime('%H:%M:%S')}] Unexpected error: {e}")
-        stop_event.set()
-        checkqueue_thread.join()
-        adjust_volume_thread.join()
-        stream.stop()
-        stream.close()
+
+def stop():
+    run.stop_event = Event()
+    run.stop_event.set()
 
 if __name__ == "__main__":
-    from shared_ads import ads1, ads2
+    from adafruit_ads1x15.ads1115 import ADS1115
+    import board
+    import busio
+    i2c = busio.I2C(board.SCL, board.SDA)
+    ads1 = ADS1115(i2c, address=0x48)
+    ads2 = ADS1115(i2c, address=0x49)
     run(Queue(), ads1, ads2)  # Fallback for standalone testing

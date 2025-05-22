@@ -1,6 +1,9 @@
 from collections import deque
 import time
+from threading import Lock
 from adafruit_ads1x15.analog_in import AnalogIn
+
+adc_lock = Lock()
 
 pin1 = [0, 1, 2]
 pin2 = [0, 1, 2]
@@ -85,18 +88,19 @@ def read_v(ads1, ads2):
     return v_list
 
 def read_adc(ads, pin, samples=10, delay=0.01):
-    try:
-        values = []
-        for _ in range(samples):
-            chan = AnalogIn(ads, pin)
-            values.append(chan.voltage)
-            time.sleep(delay)
-        avg_voltage = sum(values) / len(values)
-        print(f"[{time.strftime('%H:%M:%S')}] Read ADC (PID: {os.getpid()}, pin: {pin}): {avg_voltage:.2f}V")
-        return avg_voltage
-    except Exception as e:
-        print(f"[{time.strftime('%H:%M:%S')}] ADC read error (PID: {os.getpid()}, pin: {pin}): {e}")
-        return None
+    with adc_lock:
+        try:
+            values = []
+            for _ in range(samples):
+                chan = AnalogIn(ads, pin)
+                values.append(chan.voltage)
+                time.sleep(delay)
+            avg_voltage = sum(values) / len(values)
+            print(f"[{time.strftime('%H:%M:%S')}] Read ADC (pin: {pin}): {avg_voltage:.2f}V")
+            return avg_voltage
+        except Exception as e:
+            print(f"[{time.strftime('%H:%M:%S')}] ADC read error (pin: {pin}): {e}")
+            return None
 
 def read_id(season, ads1, ads2):
     try:
