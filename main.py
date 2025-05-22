@@ -10,9 +10,9 @@ from multiprocessing import Queue
 # GPIO Pin Configuration (using BOARD mode, physical pin numbers)
 ONOFF_PIN = 26
 SEASONS = {
-    'rainy': {'pin': 23, 'script': 'rainy_sound.py'}, button 2
-    'spring': {'pin': 35, 'script': 'spring_sound.py'}, button 1
-    'winter': {'pin': 7, 'script': 'winter_sound.py'} button 3
+    'rainy': {'pin': 23, 'script': 'rainy_sound.py'},
+    'spring': {'pin': 35, 'script': 'spring_sound.py'}, 
+    'winter': {'pin': 7, 'script': 'winter_sound.py'} 
 }
 
 running_processes = []
