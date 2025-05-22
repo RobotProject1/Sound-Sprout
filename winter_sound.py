@@ -12,7 +12,7 @@ class readnwrite(Thread):
         self.ads2 = ads2
 
     def run(self):
-        print(f"[{time.strftime('%H:%M:%S')}] readnwrite thread started")
+        print(f"[{time.strftime('%H:%M:%S')}] readnwrite thread started (PID: {os.getpid()})")
         try:
             while self.running:
                 try:
@@ -39,26 +39,21 @@ class readnwrite(Thread):
         self.running = False
 
 def run(audio_queue, ads1, ads2):
-    print(f"[{time.strftime('%H:%M:%S')}] winter_sound.py started")
+    print(f"[{time.strftime('%H:%M:%S')}] winter_sound.py started (PID: {os.getpid()})")
     try:
         readnwrite_thread = readnwrite(audio_queue, ads1, ads2)
         readnwrite_thread.start()
-        while readnwrite_thread.running:
+        while True:
             time.sleep(1)
+    except KeyboardInterrupt:
+        print(f"[{time.strftime('%H:%M:%S')}] Shutting down winter_sound.py")
+        readnwrite_thread.stop()
+        readnwrite_thread.join()
     except Exception as e:
         print(f"[{time.strftime('%H:%M:%S')}] Fatal error in winter_sound.py: {e}")
-    finally:
         readnwrite_thread.stop()
         readnwrite_thread.join()
 
-def stop():
-    readnwrite.running = False
-
 if __name__ == "__main__":
-    from adafruit_ads1x15.ads1115 import ADS1115
-    import board
-    import busio
-    i2c = busio.I2C(board.SCL, board.SDA)
-    ads1 = ADS1115(i2c, address=0x48)
-    ads2 = ADS1115(i2c, address=0x49)
+    from shared_ads import ads1, ads2
     run(Queue(), ads1, ads2)  # Fallback for standalone testing

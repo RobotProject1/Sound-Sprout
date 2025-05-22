@@ -3,8 +3,12 @@ import sys
 from threading import Thread, Lock
 import time
 import Jetson.GPIO as GPIO
-from multiprocessing import Queue
+from multiprocessing import Queue, Process
 import importlib.util
+import signal
+import board
+import busio
+from adafruit_ads1x15.ads1115 import ADS1115
 
 # GPIO Pin Configuration (using BOARD mode, physical pin numbers)
 ONOFF_PIN = 26
@@ -14,15 +18,12 @@ SEASONS = {
     'winter': {'pin': 23, 'script': 'winter_sound'}
 }
 
-running_threads = []
-thread_lock = Lock()
+running_processes = []
+process_lock = Lock()
 current_season = None
 audio_queue = Queue()  # Shared queue for audio paths
 
 # Initialize I2C and ADC
-import board
-import busio
-from adafruit_ads1x15.ads1115 import ADS1115
 try:
     i2c = busio.I2C(board.SCL, board.SDA)
     ads1 = ADS1115(i2c, address=0x48)
@@ -39,33 +40,34 @@ def load_module(module_name, file_path):
     spec.loader.exec_module(module)
     return module
 
-def stop_thread(thread):
+def terminate_process(proc):
     try:
-        if thread.is_alive():
-            module_name = getattr(thread, 'module_name', None)
-            print(f"[{time.strftime('%H:%M:%S')}] Stopping {module_name}")
-            thread.stop()
-            thread.join(timeout=2)
-            if thread.is_alive():
-                print(f"[{time.strftime('%H:%M:%S')}] Thread {module_name} did not stop cleanly")
-            else:
-                print(f"[{time.strftime('%H:%M:%S')}] Thread {module_name} stopped")
+        if proc.is_alive():
+            os.kill(proc.pid, signal.SIGTERM)
+            proc.join(timeout=2)
+            if proc.is_alive():
+                print(f"[{time.strftime('%H:%M:%S')}] Force terminating PID {proc.pid}")
+                os.kill(proc.pid, signal.SIGKILL)
+                proc.join()
+            print(f"[{time.strftime('%H:%M:%S')}] PID {proc.pid} terminated")
     except Exception as e:
-        print(f"[{time.strftime('%H:%M:%S')}] Error stopping thread: {e}")
+        print(f"[{time.strftime('%H:%M:%S')}] Error terminating PID {proc.pid}: {e}")
 
 def kill_scripts_by_name(target_names):
-    with thread_lock:
-        print(f"[{time.strftime('%H:%M:%S')}] Running threads before kill: {[t.module_name for t in running_threads if hasattr(t, 'module_name')]}")
-        for thread in running_threads[:]:
+    with process_lock:
+        print(f"[{time.strftime('%H:%M:%S')}] Running processes before kill: {[proc.pid for proc in running_processes]}")
+        for proc in running_processes[:]:
             try:
-                module_name = getattr(thread, 'module_name', None)
-                if module_name in target_names:
-                    stop_thread(thread)
-                    running_threads.remove(thread)
+                if proc.is_alive():
+                    module_name = getattr(proc, 'module_name', None)
+                    if module_name in target_names:
+                        print(f"[{time.strftime('%H:%M:%S')}] Terminating {module_name} (PID {proc.pid})")
+                        terminate_process(proc)
+                        running_processes.remove(proc)
             except Exception as e:
                 print(f"[{time.strftime('%H:%M:%S')}] Error in kill_scripts_by_name: {e}")
-                running_threads.remove(thread)
-        print(f"[{time.strftime('%H:%M:%S')}] Running threads after kill: {[t.module_name for t in running_threads if hasattr(t, 'module_name')]}")
+                running_processes.remove(proc)
+        print(f"[{time.strftime('%H:%M:%S')}] Running processes after kill: {[proc.pid for proc in running_processes]}")
 
 def run_script(module_name, audio_queue, ads1, ads2):
     script_path = os.path.join(os.path.dirname(__file__), f"{module_name}.py")
@@ -75,13 +77,13 @@ def run_script(module_name, audio_queue, ads1, ads2):
         return None
     try:
         module = load_module(module_name, script_path)
-        thread = Thread(target=module.run, args=(audio_queue, ads1, ads2), daemon=True)
-        thread.module_name = module_name  # Store module name for identification
-        thread.start()
-        with thread_lock:
-            running_threads.append(thread)
-        print(f"[{time.strftime('%H:%M:%S')}] Successfully started {module_name} thread")
-        return thread
+        proc = Process(target=module.run, args=(audio_queue, ads1, ads2), daemon=True)
+        proc.module_name = module_name  # Store module name for identification
+        proc.start()
+        with process_lock:
+            running_processes.append(proc)
+        print(f"[{time.strftime('%H:%M:%S')}] Successfully started {module_name} with PID {proc.pid}")
+        return proc
     except Exception as e:
         print(f"[{time.strftime('%H:%M:%S')}] Failed to run {script_path}: {e}")
         return None
