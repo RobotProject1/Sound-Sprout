@@ -17,18 +17,18 @@ id2v_dict = [
 # Mapping of plant IDs to audio files for each season, with ambient sound for rainy and winter only
 season_tracks = {
     'spring': {
-        1: 'sound_sprout/sound/rainy/Potato.wav',
-        2: 'sound_sprout/sound/rainy/Tomato.wav',
-        3: 'sound_sprout/sound/rainy/Carrot.wav',
-        4: 'sound_sprout/sound/rainy/Sunflower.wav',
-        5: 'sound_sprout/sound/rainy/Daisy.wav',
-        6: 'sound_sprout/sound/rainy/Mushroom.wav',
-        7: 'sound_sprout/sound/rainy/Shallot.wav',
-        8: 'sound_sprout/sound/rainy/Clover.wav',
-        9: 'sound_sprout/sound/rainy/Corn.wav',
-        10: 'sound_sprout/sound/rainy/Pumpkin.wav',
-        11: 'sound_sprout/sound/rainy/Cauliflower.wav',
-        12: 'sound_sprout/sound/rainy/Radish.wav'
+        1: 'sound_sprout/sound/spring/Potato.wav',
+        2: 'sound_sprout/sound/spring/Tomato.wav',
+        3: 'sound_sprout/sound/spring/Carrot.wav',
+        4: 'sound_sprout/sound/spring/Sunflower.wav',
+        5: 'sound_sprout/sound/spring/Daisy.wav',
+        6: 'sound_sprout/sound/spring/Mushroom.wav',
+        7: 'sound_sprout/sound/spring/Shallot.wav',
+        8: 'sound_sprout/sound/spring/Clover.wav',
+        9: 'sound_sprout/sound/spring/Corn.wav',
+        10: 'sound_sprout/sound/spring/Pumpkin.wav',
+        11: 'sound_sprout/sound/spring/Cauliflower.wav',
+        12: 'sound_sprout/sound/spring/Radish.wav'
     },
     'rainy': {
         'ambient': 'sound_sprout/sound/rainy/AMBIENT.wav',
