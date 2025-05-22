@@ -106,13 +106,14 @@ class volume(Thread):
                 print(f"[{time.strftime('%H:%M:%S')}] Volume control error: {e}")
                 time.sleep(0.2)
 
-def run(audio_queue):
+if __name__ == "__main__":
+    import multiprocessing
     stop_event = Event()
-    global mixed_audio, sample_rate, num_channels, index
     mixed_audio = np.zeros((542118, 2))
     sample_rate = 48000
     num_channels = 2
     index = 0
+    audio_queue = multiprocessing.Manager().Queue()  # Create queue in main process
 
     try:
         stream = sd.OutputStream(samplerate=sample_rate, channels=num_channels, callback=callback, blocksize=8192)
@@ -124,8 +125,7 @@ def run(audio_queue):
         adjust_volume_thread.start()
         print(f"[{time.strftime('%H:%M:%S')}] Playsound good to go!")
 
-        while True:
-            time.sleep(1)
+        stop_event.wait()
 
     except KeyboardInterrupt:
         print(f"[{time.strftime('%H:%M:%S')}] KeyboardInterrupt received, stopping...")
@@ -142,6 +142,3 @@ def run(audio_queue):
         adjust_volume_thread.join()
         stream.stop()
         stream.close()
-
-if __name__ == "__main__":
-    run(Queue())  # Fallback for standalone testing

@@ -1,18 +1,18 @@
 import os
+import psutil
+import subprocess
 import sys
 from threading import Thread, Lock
 import time
 import Jetson.GPIO as GPIO
-from multiprocessing import Queue, Process
-import importlib.util
-import signal
+from multiprocessing import Queue
 
 # GPIO Pin Configuration (using BOARD mode, physical pin numbers)
 ONOFF_PIN = 26
 SEASONS = {
-    'rainy': {'pin': 35, 'script': 'rainy_sound'},
-    'spring': {'pin': 7, 'script': 'spring_sound'},
-    'winter': {'pin': 23, 'script': 'winter_sound'}
+    'rainy': {'pin': 35, 'script': 'rainy_sound.py'},
+    'spring': {'pin': 7, 'script': 'spring_sound.py'},
+    'winter': {'pin': 23, 'script': 'winter_sound.py'}
 }
 
 running_processes = []
@@ -20,56 +20,61 @@ process_lock = Lock()
 current_season = None
 audio_queue = Queue()  # Shared queue for audio paths
 
-def load_module(module_name, file_path):
-    spec = importlib.util.spec_from_file_location(module_name, file_path)
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[module_name] = module
-    spec.loader.exec_module(module)
-    return module
-
-def terminate_process(proc):
-    try:
-        if proc.is_alive():
-            os.kill(proc.pid, signal.SIGTERM)
-            proc.join(timeout=2)
-            if proc.is_alive():
-                print(f"[{time.strftime('%H:%M:%S')}] Force terminating PID {proc.pid}")
-                os.kill(proc.pid, signal.SIGKILL)
-                proc.join()
-            print(f"[{time.strftime('%H:%M:%S')}] PID {proc.pid} terminated")
-    except Exception as e:
-        print(f"[{time.strftime('%H:%M:%S')}] Error terminating PID {proc.pid}: {e}")
-
-def kill_scripts_by_name(target_names):
+def kill_python_scripts_by_name(target_names):
     with process_lock:
         print(f"[{time.strftime('%H:%M:%S')}] Running processes before kill: {[proc.pid for proc in running_processes]}")
         for proc in running_processes[:]:
             try:
-                if proc.is_alive():
-                    module_name = getattr(proc, 'module_name', None)
-                    if module_name in target_names:
-                        print(f"[{time.strftime('%H:%M:%S')}] Terminating {module_name} (PID {proc.pid})")
-                        terminate_process(proc)
-                        running_processes.remove(proc)
-            except Exception as e:
-                print(f"[{time.strftime('%H:%M:%S')}] Error in kill_scripts_by_name: {e}")
+                if proc.poll() is None:
+                    ps_proc = psutil.Process(proc.pid)
+                    cmdline = ps_proc.cmdline()
+                    for name in target_names:
+                        if any(name in part for part in cmdline[1:]):
+                            print(f"[{time.strftime('%H:%M:%S')}] Terminating PID {proc.pid}: {' '.join(cmdline)}")
+                            proc.terminate()
+                            try:
+                                proc.wait(timeout=2)
+                                print(f"[{time.strftime('%H:%M:%S')}] PID {proc.pid} terminated successfully")
+                            except subprocess.TimeoutExpired:
+                                print(f"[{time.strftime('%H:%M:%S')}] Force killing PID {proc.pid}")
+                                proc.kill()
+                            running_processes.remove(proc)
+                            break
+            except (psutil.NoSuchProcess, psutil.AccessDenied) as e:
+                print(f"[{time.strftime('%H:%M:%S')}] Error accessing process {proc.pid}: {e}")
                 running_processes.remove(proc)
+            except Exception as e:
+                print(f"[{time.strftime('%H:%M:%S')}] Unexpected error in kill_python_scripts_by_name: {e}")
         print(f"[{time.strftime('%H:%M:%S')}] Running processes after kill: {[proc.pid for proc in running_processes]}")
 
-def run_script(module_name, audio_queue):
-    script_path = os.path.join(os.path.dirname(__file__), f"{module_name}.py")
+def run_script(script_name, queue=None):
+    script_path = os.path.join(os.path.dirname(__file__), script_name)
     print(f"[{time.strftime('%H:%M:%S')}] Checking script path: {script_path}")
     if not os.path.exists(script_path):
         print(f"[{time.strftime('%H:%M:%S')}] ERROR: Script {script_path} not found.")
         return None
+    if not os.access(script_path, os.R_OK):
+        print(f"[{time.strftime('%H:%M:%S')}] ERROR: Script {script_path} not readable.")
+        return None
     try:
-        module = load_module(module_name, script_path)
-        proc = Process(target=module.run, args=(audio_queue,), daemon=True)
-        proc.module_name = module_name  # Store module name for identification
-        proc.start()
+        print(f"[{time.strftime('%H:%M:%S')}] Python executable: {sys.executable}")
+        if not os.path.exists(sys.executable):
+            print(f"[{time.strftime('%H:%M:%S')}] ERROR: Python executable {sys.executable} not found.")
+            return None
+        print(f"[{time.strftime('%H:%M:%S')}] Attempting to run script: {script_path} with {sys.executable}")
+        # Pass queue as a command-line argument or handle via multiprocessing
+        proc = subprocess.Popen([sys.executable, script_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         with process_lock:
             running_processes.append(proc)
-        print(f"[{time.strftime('%H:%M:%S')}] Successfully started {module_name} with PID {proc.pid}")
+        print(f"[{time.strftime('%H:%M:%S')}] Successfully started {script_name} with PID {proc.pid}")
+        try:
+            stdout, stderr = proc.communicate(timeout=5)
+            if stdout:
+                print(f"[{time.strftime('%H:%M:%S')}] {script_name} stdout: {stdout}")
+            if stderr:
+                print(f"[{time.strftime('%H:%M:%S')}] {script_name} stderr: {stderr}")
+        except subprocess.TimeoutExpired:
+            print(f"[{time.strftime('%H:%M:%S')}] {script_name} still running (PID {proc.pid})")
         return proc
     except Exception as e:
         print(f"[{time.strftime('%H:%M:%S')}] Failed to run {script_path}: {e}")
@@ -102,7 +107,7 @@ class choose_season(Thread):
                         break
                     print(f"[{time.strftime('%H:%M:%S')}] {season.capitalize()} season selected")
                     print(f"[{time.strftime('%H:%M:%S')}] Killing season scripts before starting {config['script']}")
-                    kill_scripts_by_name([c['script'] for c in SEASONS.values()])
+                    kill_python_scripts_by_name([c['script'] for c in SEASONS.values()])
                     print(f"[{time.strftime('%H:%M:%S')}] Starting {config['script']}")
                     run_script(config['script'], self.audio_queue)
                     current_season = season
@@ -126,7 +131,7 @@ if __name__ == "__main__":
     GPIO.setwarnings(False)
     GPIO.setmode(GPIO.BOARD)
     GPIO.setup(ONOFF_PIN, GPIO.IN)
-    target_scripts = ['playsound', 'plant_classification', 'spring_sound', 'rainy_sound', 'winter_sound']
+    target_scripts = ['playsound.py', 'plant_classification.py', 'spring_sound.py', 'rainy_sound.py', 'winter_sound.py']
     print(f"[{time.strftime('%H:%M:%S')}] Main script started")
     try:
         while True:
@@ -135,18 +140,18 @@ if __name__ == "__main__":
             time.sleep(0.3)
             choose_season_thread = choose_season(audio_queue)
             choose_season_thread.start()
-            run_script('playsound', audio_queue)
+            run_script('playsound.py', audio_queue)
             GPIO.wait_for_edge(ONOFF_PIN, GPIO.RISING)
             print(f"[{time.strftime('%H:%M:%S')}] OFF button pressed. Stopping system...")
             time.sleep(0.3)
             choose_season_thread.stop()
-            kill_scripts_by_name(target_scripts)
+            kill_python_scripts_by_name(target_scripts)
             # Clear the queue on shutdown
             while not audio_queue.empty():
                 audio_queue.get()
     except KeyboardInterrupt:
         print(f"[{time.strftime('%H:%M:%S')}] Shutting down...")
-        kill_scripts_by_name(target_scripts)
+        kill_python_scripts_by_name(target_scripts)
         GPIO.cleanup()
         while not audio_queue.empty():
             audio_queue.get()

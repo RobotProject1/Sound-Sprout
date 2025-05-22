@@ -38,8 +38,10 @@ class readnwrite(Thread):
         print(f"[{time.strftime('%H:%M:%S')}] Stopping readnwrite thread")
         self.running = False
 
-def run(audio_queue):
+if __name__ == "__main__":
+    import multiprocessing
     print(f"[{time.strftime('%H:%M:%S')}] rainy_sound.py started (PID: {os.getpid()})")
+    audio_queue = multiprocessing.Manager().Queue()  # Create queue in main process
     try:
         readnwrite_thread = readnwrite(audio_queue)
         readnwrite_thread.start()
@@ -53,6 +55,3 @@ def run(audio_queue):
         print(f"[{time.strftime('%H:%M:%S')}] Fatal error in rainy_sound.py: {e}")
         readnwrite_thread.stop()
         readnwrite_thread.join()
-
-if __name__ == "__main__":
-    run(Queue())  # Fallback for standalone testing
