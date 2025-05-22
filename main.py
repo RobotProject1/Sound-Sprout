@@ -23,6 +23,8 @@ process_lock = Lock()
 current_season = None
 audio_queue = Queue()  # Shared queue for audio paths
 
+GPIO.cleanup()
+
 # Initialize I2C and ADC
 try:
     i2c = busio.I2C(board.SCL, board.SDA)
