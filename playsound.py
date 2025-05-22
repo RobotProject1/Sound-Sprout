@@ -6,7 +6,6 @@ from threading import Thread, Event
 import os
 from multiprocessing import Queue
 from adafruit_ads1x15.analog_in import AnalogIn
-from plant_classification import read_adc
 
 def mix(audio_clip_paths):
     audio_arrays = []
@@ -59,20 +58,6 @@ def callback(outdata, frames, time, status):
         chunk = np.vstack((first_part, second_part))
     outdata[:] = chunk
     index = (index + frames) % total_frames
-
-# def read_adc(ads, pin, samples=10, delay=0.01):
-#     try:
-#         values = []
-#         for _ in range(samples):
-#             chan = AnalogIn(ads, pin)
-#             values.append(chan.voltage)
-#             time.sleep(delay)
-#         avg_voltage = sum(values) / len(values)
-#         print(f"[{time.strftime('%H:%M:%S')}] Read ADC (PID: {os.getpid()}, pin: {pin}): {avg_voltage:.2f}V")
-#         return avg_voltage
-#     except Exception as e:
-#         print(f"[{time.strftime('%H:%M:%S')}] ADC read error (PID: {os.getpid()}, pin: {pin}): {e}")
-#         return None
 
 class checkqueue(Thread):
     def __init__(self, stop_event, audio_queue):
@@ -160,5 +145,5 @@ def run(audio_queue, ads1, ads2):
         stream.close()
 
 if __name__ == "__main__":
-    from shared_ads import ads1, ads2
+    from shared_ads import ads1, ads2, read_ads
     run(Queue(), ads1, ads2)  # Fallback for standalone testing

@@ -1,6 +1,7 @@
 from collections import deque
 import time
 from adafruit_ads1x15.analog_in import AnalogIn
+from shared_ads import read_adc
 
 pin1 = [0, 1, 2]
 pin2 = [0, 1, 2]
@@ -61,20 +62,6 @@ season_tracks = {
         12: 'sound_sprout/sound/winter/Radish.wav'
     }
 }
-
-def read_adc(ads, pin, samples=10, delay=0.01):
-    try:
-        values = []
-        for _ in range(samples):
-            chan = AnalogIn(ads, pin)
-            values.append(chan.voltage)
-            time.sleep(delay)
-        avg_voltage = sum(values) / len(values)
-        print(f"[{time.strftime('%H:%M:%S')}] Read ADC (PID: {os.getpid()}, pin: {pin}): {avg_voltage:.2f}V")
-        return avg_voltage
-    except Exception as e:
-        print(f"[{time.strftime('%H:%M:%S')}] ADC read error (PID: {os.getpid()}, pin: {pin}): {e}")
-        return None
 
 def read_v(ads1, ads2):
     v_list = []
