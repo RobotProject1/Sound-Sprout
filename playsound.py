@@ -3,9 +3,9 @@ import numpy as np
 import sounddevice as sd
 import time
 from threading import Thread, Event
-import os
+from shared_ads import ads2, read_adc
 from multiprocessing import Queue
-from adafruit_ads1x15.analog_in import AnalogIn
+import os
 
 def mix(audio_clip_paths):
     audio_arrays = []
@@ -59,20 +59,6 @@ def callback(outdata, frames, time, status):
     outdata[:] = chunk
     index = (index + frames) % total_frames
 
-def read_adc(ads, pin, samples=10, delay=0.01):
-    try:
-        values = []
-        for _ in range(samples):
-            chan = AnalogIn(ads, pin)
-            values.append(chan.voltage)
-            time.sleep(delay)
-        avg_voltage = sum(values) / len(values)
-        print(f"[{time.strftime('%H:%M:%S')}] Read ADC (PID: {os.getpid()}, pin: {pin}): {avg_voltage:.2f}V")
-        return avg_voltage
-    except Exception as e:
-        print(f"[{time.strftime('%H:%M:%S')}] ADC read error (PID: {os.getpid()}, pin: {pin}): {e}")
-        return None
-
 class checkqueue(Thread):
     def __init__(self, stop_event, audio_queue):
         Thread.__init__(self)
@@ -95,17 +81,16 @@ class checkqueue(Thread):
                 time.sleep(0.1)
 
 class volume(Thread):
-    def __init__(self, stop_event, ads2):
+    def __init__(self, stop_event):
         Thread.__init__(self)
         self.stop_event = stop_event
-        self.ads2 = ads2
         self.last_volume = None
 
     def run(self):
         print(f"[{time.strftime('%H:%M:%S')}] volume thread started (PID: {os.getpid()})")
         while not self.stop_event.is_set():
             try:
-                voltage = read_adc(self.ads2, 3)
+                voltage = read_adc(ads2, 3)
                 if voltage is None:
                     print(f"[{time.strftime('%H:%M:%S')}] Skipping volume adjustment due to ADC read failure")
                     time.sleep(0.2)
@@ -121,7 +106,7 @@ class volume(Thread):
                 print(f"[{time.strftime('%H:%M:%S')}] Volume control error: {e}")
                 time.sleep(0.2)
 
-def run(audio_queue, ads1, ads2):
+def run(audio_queue):
     stop_event = Event()
     global mixed_audio, sample_rate, num_channels, index
     mixed_audio = np.zeros((542118, 2))
@@ -134,7 +119,7 @@ def run(audio_queue, ads1, ads2):
         stream.start()
 
         checkqueue_thread = checkqueue(stop_event, audio_queue)
-        adjust_volume_thread = volume(stop_event, ads2)
+        adjust_volume_thread = volume(stop_event)
         checkqueue_thread.start()
         adjust_volume_thread.start()
         print(f"[{time.strftime('%H:%M:%S')}] Playsound good to go!")
@@ -159,5 +144,4 @@ def run(audio_queue, ads1, ads2):
         stream.close()
 
 if __name__ == "__main__":
-    from shared_ads import ads1, ads2
-    run(Queue(), ads1, ads2)  # Fallback for standalone testing
+    run(Queue())  # Fallback for standalone testing
