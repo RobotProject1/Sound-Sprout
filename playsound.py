@@ -1,31 +1,36 @@
 import wave
 import numpy as np
 import sounddevice as sd
-import os
 import time
 from threading import Thread, Event
 from shared_ads import ads2, read_adc
+from multiprocessing import Queue
 
 def mix(audio_clip_paths):
     audio_arrays = []
     sample_rate = None
     num_channels = None
-    if audio_clip_paths == []:
+    if not audio_clip_paths:
         return np.zeros((542118, 2)), 48000, 2
     for clip in audio_clip_paths:
-        with wave.open(clip, 'rb') as w:
-            if sample_rate is None:
-                sample_rate = w.getframerate()
-                num_channels = w.getnchannels()
-            else:
-                assert sample_rate == w.getframerate(), "All clips must have the same sample rate"
-                assert num_channels == w.getnchannels(), "All clips must have the same number of channels"
-            frames = w.readframes(w.getnframes())
-            audio_data = np.frombuffer(frames, dtype=np.int16)
-            if num_channels == 2:
-                audio_data = audio_data.reshape(-1, 2)
-            audio_arrays.append(audio_data)
-
+        try:
+            with wave.open(clip, 'rb') as w:
+                if sample_rate is None:
+                    sample_rate = w.getframerate()
+                    num_channels = w.getnchannels()
+                else:
+                    assert sample_rate == w.getframerate(), "All clips must have the same sample rate"
+                    assert num_channels == w.getnchannels(), "All clips must have the same number of channels"
+                frames = w.readframes(w.getnframes())
+                audio_data = np.frombuffer(frames, dtype=np.int16)
+                if num_channels == 2:
+                    audio_data = audio_data.reshape(-1, 2)
+                audio_arrays.append(audio_data)
+        except Exception as e:
+            print(f"[{time.strftime('%H:%M:%S')}] Error loading {clip}: {e}")
+            continue
+    if not audio_arrays:
+        return np.zeros((542118, 2)), 48000, 2
     max_len = max(len(a) for a in audio_arrays)
     for i in range(len(audio_arrays)):
         pad_width = max_len - len(audio_arrays[i])
@@ -53,31 +58,26 @@ def callback(outdata, frames, time, status):
     outdata[:] = chunk
     index = (index + frames) % total_frames
 
-class checkfile(Thread):
-    def __init__(self, stop_event):
+class checkqueue(Thread):
+    def __init__(self, stop_event, audio_queue):
         Thread.__init__(self)
         self.stop_event = stop_event
-        self.last_mtime = 0
+        self.audio_queue = audio_queue
 
     def run(self):
         global mixed_audio, sample_rate, num_channels
+        print(f"[{time.strftime('%H:%M:%S')}] checkqueue thread started (PID: {os.getpid()})")
         while not self.stop_event.is_set():
             try:
-                mtime = os.path.getmtime('sound_sprout/path_list.txt')
-                if mtime == self.last_mtime:
-                    time.sleep(0.1)
-                    continue
-                with open('sound_sprout/path_list.txt', 'r') as file:
-                    path_list = file.read()
-                    path_list = path_list.split(',')
-                audio_clip_paths = [i.strip() for i in path_list if i.strip()]
-                print(f"[{time.strftime('%H:%M:%S')}] New path list: {audio_clip_paths}")
-                mixed_audio, sample_rate, num_channels = mix(audio_clip_paths)
-                print(f"[{time.strftime('%H:%M:%S')}] Mixed audio shape: {mixed_audio.shape}, sample rate: {sample_rate}, channels: {num_channels}")
-                self.last_mtime = mtime
+                if not self.audio_queue.empty():
+                    audio_clip_paths = self.audio_queue.get()
+                    print(f"[{time.strftime('%H:%M:%S')}] Received audio paths: {audio_clip_paths}")
+                    mixed_audio, sample_rate, num_channels = mix(audio_clip_paths)
+                    print(f"[{time.strftime('%H:%M:%S')}] Mixed audio shape: {mixed_audio.shape}, sample rate: {sample_rate}, channels: {num_channels}")
+                time.sleep(0.1)
             except Exception as e:
-                print(f"[{time.strftime('%H:%M:%S')}] checkfile error: {e}")
-            time.sleep(0.1)
+                print(f"[{time.strftime('%H:%M:%S')}] checkqueue error: {e}")
+                time.sleep(0.1)
 
 class volume(Thread):
     def __init__(self, stop_event):
@@ -106,26 +106,21 @@ class volume(Thread):
                 time.sleep(0.2)
 
 if __name__ == "__main__":
+    import multiprocessing
     stop_event = Event()
     mixed_audio = np.zeros((542118, 2))
     sample_rate = 48000
     num_channels = 2
     index = 0
+    audio_queue = multiprocessing.Manager().Queue()  # Create queue in main process
 
     try:
-        with open('sound_sprout/path_list.txt', 'r') as file:
-            path_list = file.read().strip()
-            path_list = [p.strip() for p in path_list.split(',') if p.strip()]
-        print(f"[{time.strftime('%H:%M:%S')}] Initial path list: {path_list}")
-        audio_clip_paths = [i.strip() for i in path_list if i.strip()]
-        mixed_audio, sample_rate, num_channels = mix(audio_clip_paths)
-
         stream = sd.OutputStream(samplerate=sample_rate, channels=num_channels, callback=callback, blocksize=8192)
         stream.start()
 
-        checkfile_thread = checkfile(stop_event)
+        checkqueue_thread = checkqueue(stop_event, audio_queue)
         adjust_volume_thread = volume(stop_event)
-        checkfile_thread.start()
+        checkqueue_thread.start()
         adjust_volume_thread.start()
         print(f"[{time.strftime('%H:%M:%S')}] Playsound good to go!")
 
@@ -134,7 +129,7 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         print(f"[{time.strftime('%H:%M:%S')}] KeyboardInterrupt received, stopping...")
         stop_event.set()
-        checkfile_thread.join()
+        checkqueue_thread.join()
         adjust_volume_thread.join()
         stream.stop()
         stream.close()
@@ -142,7 +137,7 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"[{time.strftime('%H:%M:%S')}] Unexpected error: {e}")
         stop_event.set()
-        checkfile_thread.join()
+        checkqueue_thread.join()
         adjust_volume_thread.join()
         stream.stop()
         stream.close()

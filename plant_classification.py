@@ -9,8 +9,48 @@ pin2 = [0, 1, 2]
 voltage_queues_1 = {pin: deque(maxlen=15) for pin in pin1}
 voltage_queues_2 = {pin: deque(maxlen=15) for pin in pin2}
 
-id2v_dict = [(4.10, 1), (3.87, 2), (3.67, 3), (3.59, 4), (3.20, 5), (2.98, 6), 
-             (2.64, 7), (2.18, 8), (1.99, 9), (1.75, 10), (1.50, 11), (1.15, 12)]
+id2v_dict = [
+    (4.10, 1), (3.87, 2), (3.67, 3), (3.59, 4), (3.20, 5), (2.98, 6),
+    (2.64, 7), (2.18, 8), (1.99, 9), (1.75, 10), (1.50, 11), (1.15, 12)
+]
+
+# Mapping of plant IDs to audio files for each season, with ambient sound for rainy and winter only
+season_tracks = {
+    'spring': {
+        1: 'sound_sprout/sound/spring/Potato.wav',
+        2: 'sound_sprout/sound/spring/Tomato.wav'
+    },
+    'rainy': {
+        'ambient': 'sound_sprout/sound/rainy/AMBIENT.wav',
+        1: 'sound_sprout/sound/rainy/Potato.wav',
+        2: 'sound_sprout/sound/rainy/Tomato.wav',
+        3: 'sound_sprout/sound/rainy/Carrot.wav',
+        4: 'sound_sprout/sound/rainy/Sunflower.wav',
+        5: 'sound_sprout/sound/rainy/Daisy.wav',
+        6: 'sound_sprout/sound/rainy/Mushroom.wav',
+        7: 'sound_sprout/sound/rainy/Shallot.wav',
+        8: 'sound_sprout/sound/rainy/Clover.wav',
+        9: 'sound_sprout/sound/rainy/Corn.wav',
+        10: 'sound_sprout/sound/rainy/Pumpkin.wav',
+        11: 'sound_sprout/sound/rainy/Cauliflower.wav',
+        12: 'sound_sprout/sound/rainy/Radish.wav'
+    },
+    'winter': {
+        'ambient': 'sound_sprout/sound/winter/AMBIENT.wav',
+        1: 'sound_sprout/sound/winter/Potato.wav',
+        2: 'sound_sprout/sound/winter/Tomato.wav',
+        3: 'sound_sprout/sound/winter/Carrot.wav',
+        4: 'sound_sprout/sound/winter/Sunflower.wav',
+        5: 'sound_sprout/sound/winter/Daisy.wav',
+        6: 'sound_sprout/sound/winter/Mushroom.wav',
+        7: 'sound_sprout/sound/winter/Shallot.wav',
+        8: 'sound_sprout/sound/winter/Clover.wav',
+        9: 'sound_sprout/sound/winter/Corn.wav',
+        10: 'sound_sprout/sound/winter/Pumpkin.wav',
+        11: 'sound_sprout/sound/winter/Cauliflower.wav',
+        12: 'sound_sprout/sound/winter/Radish.wav'
+    }
+}
 
 def read_v():
     v_list = []
@@ -34,7 +74,7 @@ def read_v():
         v_list.append(avg_voltage)
     return v_list
 
-def read_id():
+def read_id(season):
     try:
         v_list = read_v()
         id_list = []
@@ -51,7 +91,19 @@ def read_id():
                 print(f"[{time.strftime('%H:%M:%S')}] Voltage {v:.2f}V matched to no ID")
             id_list.append(matched_id)
         print(f"[{time.strftime('%H:%M:%S')}] Detected IDs: {id_list}")
-        return id_list
+        
+        # Map IDs to audio paths based on season, include ambient sound for rainy and winter
+        audio_paths = []
+        track = season_tracks.get(season, {})
+        if season in ['rainy', 'winter']:
+            ambient_path = track.get('ambient')
+            if ambient_path:
+                audio_paths.append(ambient_path)
+        for plant_id in id_list:
+            if plant_id in track:
+                audio_paths.append(track[plant_id])
+        print(f"[{time.strftime('%H:%M:%S')}] Audio paths for {season}: {audio_paths}")
+        return audio_paths
     except Exception as e:
         print(f"[{time.strftime('%H:%M:%S')}] read_id error: {e}")
-        return [0] * (len(pin1) + len(pin2))
+        return []

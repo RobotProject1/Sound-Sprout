@@ -1,48 +1,29 @@
-import os
 import time
+import os
 from threading import Thread
 from shared_ads import ads1, read_adc
 from plant_classification import read_id
-
-# Mapping of plant IDs to audio files
-track = {
-    1: 'sound_sprout/sound/spring/Potato.wav',
-    2: 'sound_sprout/sound/spring/Tomato.wav'
-}
+from multiprocessing import Queue
 
 class readnwrite(Thread):
-    def __init__(self):
+    def __init__(self, audio_queue):
         Thread.__init__(self)
         self.running = True
+        self.audio_queue = audio_queue
 
     def run(self):
         print(f"[{time.strftime('%H:%M:%S')}] readnwrite thread started (PID: {os.getpid()})")
-        path_list_path = 'sound_sprout/path_list.txt'
         try:
-            # Verify path_list.txt is writable
-            if not os.access(os.path.dirname(path_list_path) or '.', os.W_OK):
-                print(f"[{time.strftime('%H:%M:%S')}] ERROR: Directory for {path_list_path} is not writable")
-                return
             while self.running:
                 try:
-                    # Read voltages and classify plant IDs
-                    id_list = read_id()
-                    print(f"[{time.strftime('%H:%M:%S')}] Detected IDs: {id_list}")
-                    
-                    # Get audio file paths for valid IDs
-                    audio_paths = []
-                    for plant_id in id_list:
-                        if plant_id in track:
-                            audio_paths.append(track[plant_id])
+                    # Read audio paths for the current season (no ambient for spring)
+                    audio_paths = read_id('spring')
+                    print(f"[{time.strftime('%H:%M:%S')}] Detected audio paths: {audio_paths}")
                     
                     if audio_paths:
-                        # Write to path_list.txt
-                        try:
-                            with open(path_list_path, 'w') as f:
-                                f.write(','.join(audio_paths))
-                            print(f"[{time.strftime('%H:%M:%S')}] Wrote to {path_list_path}: {','.join(audio_paths)}")
-                        except Exception as e:
-                            print(f"[{time.strftime('%H:%M:%S')}] Failed to write to {path_list_path}: {e}")
+                        # Send to queue
+                        self.audio_queue.put(audio_paths)
+                        print(f"[{time.strftime('%H:%M:%S')}] Sent to queue: {audio_paths}")
                     else:
                         print(f"[{time.strftime('%H:%M:%S')}] No valid plant IDs detected")
                     
@@ -58,9 +39,11 @@ class readnwrite(Thread):
         self.running = False
 
 if __name__ == "__main__":
+    import multiprocessing
     print(f"[{time.strftime('%H:%M:%S')}] spring_sound.py started (PID: {os.getpid()})")
+    audio_queue = multiprocessing.Manager().Queue()  # Create queue in main process
     try:
-        readnwrite_thread = readnwrite()
+        readnwrite_thread = readnwrite(audio_queue)
         readnwrite_thread.start()
         while True:
             time.sleep(1)

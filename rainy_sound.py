@@ -1,57 +1,57 @@
-from plant_classification import read_id,read_v
-from threading import Thread
-import os
 import time
-
-#(1,Potato)(2,Tomato)(3,Carrot)(4,Sunflower)(5,Daisy)(6,Mushroom)(7,Shallot)(8,Clover)(9,Corn)(10,Pumpkin)(11,Cauliflower)(12,Radish)
-track = {
-    1: 'sound_sprout/sound/rainy/Potato.wav',
-    2: 'sound_sprout/sound/rainy/Tomato.wav',
-    3: 'sound_sprout/sound/rainy/Carrot.wav', 
-    4: 'sound_sprout/sound/rainy/Sunflower.wav',
-    5: 'sound_sprout/sound/rainy/Daisy.wav', 
-    6: 'sound_sprout/sound/rainy/Mushroom.wav',
-    7: 'sound_sprout/sound/rainy/Shallot.wav', 
-    8: 'sound_sprout/sound/rainy/Clover.wav',
-    9: 'sound_sprout/sound/rainy/Corn.wav', 
-    10: 'sound_sprout/sound/rainy/Pumpkin.wav',
-    11: 'sound_sprout/sound/rainy/Cauliflower.wav',
-    12: 'sound_sprout/sound/rainy/Radish.wav'
-}
+import os
+from threading import Thread
+from shared_ads import ads1, read_adc
+from plant_classification import read_id
+from multiprocessing import Queue
 
 class readnwrite(Thread):
-    def __init__(self):
+    def __init__(self, audio_queue):
         Thread.__init__(self)
-    
-    def run(self):
-        print("readnwrite thread started")
-        plant_id_old = []
-        plant_id_new = []
-        while True:
-            try:
-                plant_id_new = read_id(read_v())
-                print(f"New plant IDs: {plant_id_new}")
-                if plant_id_new == plant_id_old:
-                    print("No change in plant IDs")
-                else:
-                    path_list = "sound_sprout/sound/rainy/AMBIENT.wav"
-                    for i in plant_id_new:
-                        if i == 0:
-                            print(f"Skipping ID 0")
-                        else:
-                            if i in track and os.path.exists(track[i]):
-                                path_list += ',' + track[i]
-                            else:
-                                print(f"Invalid ID {i} or file {track.get(i, 'N/A')} not found")
-                    path_list = path_list.lstrip(',')
-                    print(f"Writing to path_list.txt: {path_list}")
-                    with open('sound_sprout/path_list.txt', 'w') as file:
-                        file.write(path_list)
-                    plant_id_old = plant_id_new.copy()
-            except Exception as e:
-                print(f"readnwrite error: {e}")
-            time.sleep(1)
+        self.running = True
+        self.audio_queue = audio_queue
 
-if __name__ == "__main__": 
-    thr1 = readnwrite()
-    thr1.start()
+    def run(self):
+        print(f"[{time.strftime('%H:%M:%S')}] readnwrite thread started (PID: {os.getpid()})")
+        try:
+            while self.running:
+                try:
+                    # Read audio paths for the current season, including ambient
+                    audio_paths = read_id('rainy')
+                    print(f"[{time.strftime('%H:%M:%S')}] Detected audio paths: {audio_paths}")
+                    
+                    if audio_paths:
+                        # Send to queue
+                        self.audio_queue.put(audio_paths)
+                        print(f"[{time.strftime('%H:%M:%S')}] Sent to queue: {audio_paths}")
+                    else:
+                        print(f"[{time.strftime('%H:%M:%S')}] No valid plant IDs detected")
+                    
+                    time.sleep(1)
+                except Exception as e:
+                    print(f"[{time.strftime('%H:%M:%S')}] readnwrite error: {e}")
+                    time.sleep(1)
+        except Exception as e:
+            print(f"[{time.strftime('%H:%M:%S')}] Fatal error in readnwrite thread: {e}")
+
+    def stop(self):
+        print(f"[{time.strftime('%H:%M:%S')}] Stopping readnwrite thread")
+        self.running = False
+
+if __name__ == "__main__":
+    import multiprocessing
+    print(f"[{time.strftime('%H:%M:%S')}] rainy_sound.py started (PID: {os.getpid()})")
+    audio_queue = multiprocessing.Manager().Queue()  # Create queue in main process
+    try:
+        readnwrite_thread = readnwrite(audio_queue)
+        readnwrite_thread.start()
+        while True:
+            time.sleep(1)
+    except KeyboardInterrupt:
+        print(f"[{time.strftime('%H:%M:%S')}] Shutting down rainy_sound.py")
+        readnwrite_thread.stop()
+        readnwrite_thread.join()
+    except Exception as e:
+        print(f"[{time.strftime('%H:%M:%S')}] Fatal error in rainy_sound.py: {e}")
+        readnwrite_thread.stop()
+        readnwrite_thread.join()
