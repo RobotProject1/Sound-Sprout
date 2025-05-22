@@ -7,20 +7,6 @@ import os
 
 i2c_lock = threading.Lock()
 
-def read_adc(ads, pin, samples=10, delay=0.01):
-    try:
-        values = []
-        for _ in range(samples):
-            chan = AnalogIn(ads, pin)
-            values.append(chan.voltage)
-            time.sleep(delay)
-        avg_voltage = sum(values) / len(values)
-        print(f"[{time.strftime('%H:%M:%S')}] Read ADC (PID: {os.getpid()}, pin: {pin}): {avg_voltage:.2f}V")
-        return avg_voltage
-    except Exception as e:
-        print(f"[{time.strftime('%H:%M:%S')}] ADC read error (PID: {os.getpid()}, pin: {pin}): {e}")
-        return None
-
 def get_i2c():
     with i2c_lock:
         print(f"[{time.strftime('%H:%M:%S')}] Initializing I2C (PID: {os.getpid()})")
@@ -31,6 +17,22 @@ def get_i2c():
                 print(f"[{time.strftime('%H:%M:%S')}] I2C init attempt failed: {e}")
                 time.sleep(0.5)
         raise RuntimeError("Failed to initialize I2C after retries")
+
+def read_adc(ads, pin, samples=10, delay=0.01):
+    with i2c_lock:
+        try:
+            from adafruit_ads1x15.analog_in import AnalogIn
+            values = []
+            for _ in range(samples):
+                chan = AnalogIn(ads, pin)
+                values.append(chan.voltage)
+                time.sleep(delay)
+            avg_voltage = sum(values) / len(values)
+            print(f"[{time.strftime('%H:%M:%S')}] Read ADC (PID: {os.getpid()}, pin: {pin}): {avg_voltage:.2f}V")
+            return avg_voltage
+        except Exception as e:
+            print(f"[{time.strftime('%H:%M:%S')}] ADC read error (PID: {os.getpid()}, pin: {pin}): {e}")
+            return None
 
 try:
     i2c = get_i2c()
