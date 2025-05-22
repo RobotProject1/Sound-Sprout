@@ -1,6 +1,7 @@
 from collections import deque
-from shared_ads import ads1, ads2, read_adc
 import time
+from adafruit_ads1x15.analog_in import AnalogIn
+from shared_ads import read_adc
 
 pin1 = [0, 1, 2]
 pin2 = [0, 1, 2]
@@ -62,7 +63,7 @@ season_tracks = {
     }
 }
 
-def read_v():
+def read_v(ads1, ads2):
     v_list = []
     for pin in pin1:
         voltage = read_adc(ads1, pin)
@@ -84,9 +85,9 @@ def read_v():
         v_list.append(avg_voltage)
     return v_list
 
-def read_id(season):
+def read_id(season, ads1, ads2):
     try:
-        v_list = read_v()
+        v_list = read_v(ads1, ads2)
         id_list = []
         valid_ids = set(range(1, 13))
         for v in v_list:

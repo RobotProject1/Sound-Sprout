@@ -3,9 +3,9 @@ import numpy as np
 import sounddevice as sd
 import time
 from threading import Thread, Event
-from shared_ads import ads2, read_adc
-from multiprocessing import Queue
 import os
+from multiprocessing import Queue
+from adafruit_ads1x15.analog_in import AnalogIn
 
 def mix(audio_clip_paths):
     audio_arrays = []
@@ -81,16 +81,17 @@ class checkqueue(Thread):
                 time.sleep(0.1)
 
 class volume(Thread):
-    def __init__(self, stop_event):
+    def __init__(self, stop_event, ads2):
         Thread.__init__(self)
         self.stop_event = stop_event
+        self.ads2 = ads2
         self.last_volume = None
 
     def run(self):
         print(f"[{time.strftime('%H:%M:%S')}] volume thread started (PID: {os.getpid()})")
         while not self.stop_event.is_set():
             try:
-                voltage = read_adc(ads2, 3)
+                voltage = read_adc(self.ads2, 3)
                 if voltage is None:
                     print(f"[{time.strftime('%H:%M:%S')}] Skipping volume adjustment due to ADC read failure")
                     time.sleep(0.2)
@@ -106,26 +107,26 @@ class volume(Thread):
                 print(f"[{time.strftime('%H:%M:%S')}] Volume control error: {e}")
                 time.sleep(0.2)
 
-if __name__ == "__main__":
-    import multiprocessing
+def run(audio_queue, ads1, ads2):
     stop_event = Event()
+    global mixed_audio, sample_rate, num_channels, index
     mixed_audio = np.zeros((542118, 2))
     sample_rate = 48000
     num_channels = 2
     index = 0
-    audio_queue = multiprocessing.Manager().Queue()  # Create queue in main process
 
     try:
         stream = sd.OutputStream(samplerate=sample_rate, channels=num_channels, callback=callback, blocksize=8192)
         stream.start()
 
         checkqueue_thread = checkqueue(stop_event, audio_queue)
-        adjust_volume_thread = volume(stop_event)
+        adjust_volume_thread = volume(stop_event, ads2)
         checkqueue_thread.start()
         adjust_volume_thread.start()
         print(f"[{time.strftime('%H:%M:%S')}] Playsound good to go!")
 
-        stop_event.wait()
+        while True:
+            time.sleep(1)
 
     except KeyboardInterrupt:
         print(f"[{time.strftime('%H:%M:%S')}] KeyboardInterrupt received, stopping...")
@@ -142,3 +143,7 @@ if __name__ == "__main__":
         adjust_volume_thread.join()
         stream.stop()
         stream.close()
+
+if __name__ == "__main__":
+    from shared_ads import ads1, ads2, read_ads
+    run(Queue(), ads1, ads2)  # Fallback for standalone testing
